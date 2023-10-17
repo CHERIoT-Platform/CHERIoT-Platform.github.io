@@ -1,0 +1,54 @@
+---
+---
+{% assign doi = null %}
+{% assign url = null %}
+{% assign pdf = null %}
+{% if entry.doi %}
+  {% if entry.doi contains '://' %}
+    {% assign doi = entry.doi %}
+  {% else %}
+    {% capture doi %}http://doi.org/{{entry.doi}}{% endcapture %}
+  {% endif %}
+{% endif %}
+{% if entry.pdf %}
+  {% assign url = entry.pdf %}
+{% elsif entry.url %}
+  {% assign url = entry.url %}
+{% elsif doi %}
+  {% assign url = doi %}
+{% endif %}
+{% if url %}
+{% capture cite %}{{ reference | replace: entry.title, "<a class='bibtitle' href='%%URL_PLACEHOLDER%%'>\0</a>" | replace: '%%URL_PLACEHOLDER%%', url }}{% endcapture %}
+{% else %}
+{% capture cite %}{{ reference | replace: entry.title, "<span class='bibtitle'>\0</span>" }}{% endcapture %}
+{% endif %}
+{{ cite }}
+{% if entry.pdf %}
+  {% assign pdf = entry.pdf %}
+{% elsif entry.url %}
+  {% if entry.url contains '.pdf' %}
+    {% assign pdf = entry.url %}
+  {% endif %}
+{% endif %}
+{% if pdf %}
+<a class="biblink" href="{{ pdf }}">[<span style="font-variant: small-caps">pdf</span>]</a>
+{% endif %}
+{% if entry.slides %}
+<a class="biblink" href="{{ entry.slides }}">[<span style="font-variant: small-caps">slides</span>]</a>
+{% endif %}
+{% if entry.poster %}
+<a class="biblink" href="{{ entry.poster }}">[<span style="font-variant: small-caps">poster</span>]</a>
+{% endif %}
+{% if doi %}
+<a class="biblink" href="{{ doi }}">[<span style="font-variant: small-caps">doi</span>]</a>
+{% endif %}
+<details class="bibtex">
+	<summary>BibTeX</summary>
+	<pre class="bibtex">{{ entry.bibtex }}</pre>
+</details>
+{% if entry.abstract %}
+<details class="abstract">
+	<summary>Abstract</summary>
+	<p class="abstract">{{ entry.abstract | strip | newline_to_br }}</p>
+</details>
+{% endif %}
