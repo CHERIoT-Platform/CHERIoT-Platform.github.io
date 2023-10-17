@@ -1,14 +1,3 @@
-@techreport{amar2023cheriot,
-author = {Amar, Saar and Chen, Tony and Chisnall, David and Domke, Felix and Filardo, Nathaniel and Liu, Kunyan and Norton-Wright, Robert and Tao, Yucong and N. M. Watson, Robert and Xia, Hongyan},
-title = {CHERIoT: Rethinking security for low-cost embedded systems},
-institution = {Microsoft},
-year = {2023},
-month = {February},
-abstract = {Small embedded cores have little area to spare for security features and yet must often run code written in unsafe languages and, increasingly, are exposed to the hostile Internet. CHERIoT  (Capability Hardware Extension to RISC-V for Internet of Things) builds on top of CHERI and RISC-V to provide an ISA and software model that lets software depend on object-granularity spatial memory safety, deterministic use-after-free protection, and lightweight compartmentalization exposed directly to the C/C++ language model. This can run existing embedded software components on a clean-slate RTOS that scales up to large numbers of isolated (yet securely communicating) compartments, even on systems with under 256 KiB of SRAM.},
-url = {https://www.microsoft.com/en-us/research/uploads/prod/2023/02/cheriot-63e11a4f1e629.pdf},
-number = {MSR-TR-2023-6},
-}
-
 @inproceedings{cheriotmicro2023,
 	author = {Amar, Saar and Chisnall, David and Chen, Tony and Wesley, Nathaniel Filardo and Laurie, Ben and Liu, Kunyan and Norton, Robert and Moore, Simon W. and Tao, Yucong and Watson, Robert N. M. and Xia, Hongyan},
 	title = {{CHERIoT}: Complete Memory Safety for Embedded Devices},
@@ -23,4 +12,15 @@ number = {MSR-TR-2023-6},
 		To slake this need, we present a novel adaptation of the CHERI capability architecture, co-designed with a green-field, security-centric RTOS.  It is scaled for embedded systems, is capable of fine-grained software compartmentalization, and provides affordances for full inter-compartment memory safety.  We highlight central design decisions and offloads and summarize how our prototype RTOS uses these to enable memory-safe, compartmentalized applications.  Unlike many state-of-the-art schemes, our solution deterministically (not probabilistically) eliminates memory safety vulnerabilities while maintaining source-level compatibility.  We characterize the power, performance, and area microarchitectural impacts, run microbenchmarks of key facilities, and exhibit the practicality of an end-to-end IoT application.  The implementation shows that full memory safety for compartmentalized embedded systems is achievable without violating resource constraints or real-time guarantees, and that hardware assists need not be expensive, intrusive, or power-hungry.},
 	pdf = {papers/2023-micro-cheriot-uarch.pdf},
 	poster = {papers/2023-11-31-MIRCRO-CHERIoT-Poster.pdf}
+}
+
+@techreport{amar2023cheriot,
+author = {Amar, Saar and Chen, Tony and Chisnall, David and Domke, Felix and Filardo, Nathaniel and Liu, Kunyan and Norton-Wright, Robert and Tao, Yucong and N. M. Watson, Robert and Xia, Hongyan},
+title = {CHERIoT: Rethinking security for low-cost embedded systems},
+institution = {Microsoft},
+year = {2023},
+month = {February},
+abstract = {Small embedded cores have little area to spare for security features and yet must often run code written in unsafe languages and, increasingly, are exposed to the hostile Internet. CHERIoT  (Capability Hardware Extension to RISC-V for Internet of Things) builds on top of CHERI and RISC-V to provide an ISA and software model that lets software depend on object-granularity spatial memory safety, deterministic use-after-free protection, and lightweight compartmentalization exposed directly to the C/C++ language model. This can run existing embedded software components on a clean-slate RTOS that scales up to large numbers of isolated (yet securely communicating) compartments, even on systems with under 256 KiB of SRAM.},
+url = {https://www.microsoft.com/en-us/research/uploads/prod/2023/02/cheriot-63e11a4f1e629.pdf},
+number = {MSR-TR-2023-6},
 }
