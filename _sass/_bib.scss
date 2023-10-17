@@ -4,6 +4,28 @@ label.biblink {
 label.biblink:hover {
   text-decoration: underline;
 }
+details summary {
+  cursor: pointer;
+}
+details.bibtex {
+    display:inline-block
+}
+details.abstract {
+    display:inline-block
+}
+details.bibtex[open] {
+    display:block
+}
+details.abstract[open] {
+    display:block
+}
+details > summary {
+  cursor: pointer;
+  color: #003c79;
+}
+details > summary:hover {
+  text-decoration: underline;
+}
 pre.bibtex, p.abstract {
     background-color: #eef;
     margin: 0 10px 0 10px;
