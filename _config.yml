@@ -12,6 +12,7 @@ theme: minima
 plugins:
   - jekyll-feed
   - jekyll-scholar
+  - jekyll-redirect-from
 
 markdown: kramdown
 kramdown:
