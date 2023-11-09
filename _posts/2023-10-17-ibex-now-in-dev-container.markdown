@@ -3,6 +3,7 @@ layout: post
 title:  "Ibex simulator now available in the devcontainer"
 date:   2023-10-17 11:38:13 +0100
 categories: devcontainer development ibex
+author: "David Chisnall"
 ---
 
 Since its creation, the CHERIoT DevContainer has included the simulator built from the Sail formal model.

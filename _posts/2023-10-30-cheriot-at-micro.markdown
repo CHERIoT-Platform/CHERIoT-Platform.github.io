@@ -3,6 +3,7 @@ layout: post
 title:  "CHERIoT at MICRO 2023"
 date:   2023-10-30T09:03+00:00
 categories: ibex flute architecture publication
+author: "David Chisnall"
 ---
 
 This week, some of the CHERIoT team will be at [MICRO 2023](https://microarch.org/micro56/index.php) presenting the first paper about the CHERIoT platform:
