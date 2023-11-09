@@ -2,7 +2,7 @@
 layout: post
 title:  "CHERIoT Programmers' Guide drafts online"
 date:   2023-11-06T15:49+00:00
-categories: book guide
+categories: guide documentation
 ---
 
 You might have noticed a link in the header to the [CHERIoT Programmers' Guide](https://cheriot.org/book).
