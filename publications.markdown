@@ -39,3 +39,12 @@ Tech Reports
 
 {{ techreports }}
 {% endif %}
+
+{% capture presentations %}{% bibliography --query @unpublished %}{% endcapture %}
+{% if presentations.size != 30 %}
+Presentations
+-------------
+
+{{ presentations }}
+{% endif %}
+
