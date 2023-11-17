@@ -33,7 +33,7 @@ Currently, this builds without support for the switches and buttons.
 That will hopefully change soon, but if it hasn't yet then edit `build_arty_a7` and replace `arty-cheri-a7-100.xdc` with `arty-cheri-a7-100-buttons.xdc`.
 If there is no `arty-cheri-a7-100-buttons.xdc` file, then it's probably replaced the old one.
 
-The SAFE configuration doesn't yet provide tools to load firmware over JTAG (coming soon!) and so, in the interim, we've written [a small bootloader that lives in ROM and can load a hex file over the UART]((https://github.com/CHERIoT-Platform/cheriot-safe-uart-boot-rom).
+The SAFE configuration doesn't yet provide tools to load firmware over JTAG (coming soon!) and so, in the interim, we've written [a small bootloader that lives in ROM and can load a hex file over the UART](https://github.com/CHERIoT-Platform/cheriot-safe-uart-boot-rom).
 The hex file for this is baked into ROM during build.
 
 This loader resets all of the memory to a pristine state between runs and starts the firmware once it's booted.
