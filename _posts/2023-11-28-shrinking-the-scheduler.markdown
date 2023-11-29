@@ -45,16 +45,17 @@ In others, they're expected to be a trusted intermediary between two compartment
 
 In the first case, both ends trust each other to follow the rules and so we can expose a message-queue library and invoke it without a cross-compartment call.
 This makes the overhead of sending and receiving in a message queue lower.
-You need a cross-compartment call only if the queue is transitioning from empty to non-empty, full to non-full, or if there is contention on sending or receiving.
+You need a cross-compartment call only if the queue is transitioning from empty to non-empty, full to non-full, or if there is contention on sending or receiving, the cases where a thread in one endpoint may be sleeping.
 All other cases are a direct call to a shared library.
 
-In the second case, we need another compartment to ensure that the message-queue rules are followed.
+In the second case, we need another compartment to ensure that the message-queue rules are followed, for example not overwriting arbitrary messages and ensuring that the producer and consumer counters are incremented correctly.
 The scheduler was doing this, but in the new version there is an option compartment that can fill this rôle.
 This compartment is completely unprivileged and compromising it will not impact the scheduler.
 It is also almost entirely stateless.
 Two different message queues are never visible to it at the same time, all communication between threads happens via message queue objects that are passed in (as sealed capabilities) from callers.
 The only state that it owns is the cached thread ID pointer returned from `thread_id_get_pointer()` by the scheduler.
 This means that, if you find a bug in the message queue code (entirely possible!) and force it to crash, it will not affect any other message queues, only yours.
+In particular, it won't leak data from message queues or corrupt their state.
 
 The new code also uses per-queue and per-event-group synchronisation.
 The original version in the scheduler ran with interrupts disabled.
