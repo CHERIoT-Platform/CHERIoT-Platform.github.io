@@ -28,7 +28,8 @@ After the initial check, the scheduler associates sleepers with an address and s
 
 The scheduler has to be in the TCB for availability but ideally it shouldn't be for confidentiality or integrity.
 For event groups, this was mostly true.
-A malicious or compromised scheduler could set or clear event notifications causing things to wake spuriously or not, but you could at least mitigate this in by also communicating any key state separately from the event group and using it just to tell you to check something else.
+A malicious or compromised scheduler could set or clear event notifications, causing things to wake spuriously or not, but you could at least mitigate this by also communicating any key state separately from the event group and using it just to tell you to check something else.
+
 
 Message queues complicated this picture.
 The scheduler could see all messages in message queues.
