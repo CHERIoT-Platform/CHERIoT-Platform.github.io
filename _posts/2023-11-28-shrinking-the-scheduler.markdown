@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Shrinking the scheduler"
-date:   2023-11-29T14:10+00:00
+date:   2023-11-30T17:30+00:00
 categories: scheduler tcb
 author: "David Chisnall"
 ---
@@ -15,6 +15,7 @@ The original version that Hongyan Xia wrote had two communication primitives int
  - Message queues (multi-producer multi-consumer FIFOs of fixed-sized messages)
  - Event groups (bitfields that let you wait on a certain subset being ones)
 
+This was very effective as a starting point and Hongyan was able to port some quite large components from FreeRTOS with a thin compatibility wrapper and few code changes.
 
 The initial synchronisation and communication mechanisms were later joined by futexes (somewhat misnamed, since we don't have a 'userspace' as such).
 A futex-like mechanism is now present on all major (non-embedded) operating systems and is even required for C++'s `std::atomic`, which (as of C++20) exposes [`wait`](https://en.cppreference.com/w/cpp/atomic/atomic/wait) and [`notify_one`](https://en.cppreference.com/w/cpp/atomic/atomic/notify_one) / [`notify_all`](https://en.cppreference.com/w/cpp/atomic/atomic/notify_all) methods that expose futex-like behaviour.
@@ -30,36 +31,39 @@ The scheduler has to be in the TCB for availability but ideally it shouldn't be 
 For event groups, this was mostly true.
 A malicious or compromised scheduler could set or clear event notifications, causing things to wake spuriously or not, but you could at least mitigate this by also communicating any key state separately from the event group and using it just to tell you to check something else.
 
-
 Message queues complicated this picture.
 The scheduler could see all messages in message queues.
 Worse, message queues were reachable from the thread structures and so a compromise of the scheduler in one thread could leak or corrupt any data in any in-flight message queues.
 This put the scheduler in the TCB for confidentiality and integrity of the contents of message queues.
 
 Futexes can be used to implement a rich set of locks and can also be used to implement message queues and event groups.
-This is precisely what [PR139](https://github.com/microsoft/cheriot-rtos/pull/139) is doing.
+This is precisely what [PR139](https://github.com/microsoft/cheriot-rtos/pull/139) did, removing these from the scheduler.
 
 Message queues are interesting because they have a variety of threat models.
 In some cases, they're used for passing messages between threads in the same compartment.
-In others, they're expected to be a trusted intermediary between two compartments in different trust domains.
+In others, they're expected to be a trusted intermediary between two (or more) compartments in different trust domains.
 
 In the first case, both ends trust each other to follow the rules and so we can expose a message-queue library and invoke it without a cross-compartment call.
 This makes the overhead of sending and receiving in a message queue lower.
-You need a cross-compartment call only if the queue is transitioning from empty to non-empty, full to non-full, or if there is contention on sending or receiving, the cases where a thread in one endpoint may be sleeping.
-All other cases are a direct call to a shared library.
+You need a cross-compartment call into the scheduler only if another thread may be blocked on a condition that you've just changed (such as making a queue non-empty) or if you need to sleep (for example, trying to sending a message to a full queue or reading from an empty one).
+All other cases are a direct call to a shared library and require no cross-compartment interaction.
 
-In the second case, we need another compartment to ensure that the message-queue rules are followed, for example not overwriting arbitrary messages and ensuring that the producer and consumer counters are incremented correctly.
-The scheduler was doing this, but in the new version there is an option compartment that can fill this rôle.
+In the second case, we don't want to expose the internal implementation details to either compartment.
+A malicious (or buggy, or compromised) compartment that can directly manipulate the queue could modify values that are in the queue already, modify producer or consumer counters to cause the other end to trap trying to access out of the bounds of the buffer, and so on.
+A compartment that exposes sealed endpoints addresses this, serving as a trusted intermediary that manages the state of the queue.
+The scheduler was responsible for this, but in the new version there is an optional compartment that can fill this rôle.
+
 This compartment is completely unprivileged and compromising it will not impact the scheduler.
-It is also almost entirely stateless.
+It is also entirely stateless.
 Two different message queues are never visible to it at the same time, all communication between threads happens via message queue objects that are passed in (as sealed capabilities) from callers.
-The only state that it owns is the cached thread ID pointer returned from `thread_id_get_pointer()` by the scheduler.
 This means that, if you find a bug in the message queue code (entirely possible!) and force it to crash, it will not affect any other message queues, only yours.
-In particular, it won't leak data from message queues or corrupt their state.
+Even if one message queue caller manages to gain arbitrary-code execution in the compartment *there is no way to get access to any other message queue*.
+
+This is the kind of security guarantee that you can build when you start with a CHERI core.
 
 The new code also uses per-queue and per-event-group synchronisation.
 The original version in the scheduler ran with interrupts disabled.
-This simplified the code but meant that some operations could delay interrupts for a along time.
+This simplified the code but meant that some operations could delay interrupts for a long time.
 For example, if you created a message queue with 4 KiB elements, the scheduler would copy the entire 4 KiB with interrupts disabled, consuming several hundred cycles.
 The new code runs entirely with interrupts enabled.
 The only time interrupts are disabled is when the futex wait and wake functions in the scheduler are called.
@@ -78,4 +82,8 @@ For those keeping score, that's 44% of the original size: a nice reduction in th
 
 This also means that the scheduler is untrusted for confidentiality or integrity of anything other than futex words (which are 32-bit integers and so cannot hold pointers).
 It no longer tracks any state for message queues and so a compromised scheduler can't leak the contents of message-queue messages.
+
+A follow-on PR then updated how thread IDs are accessed, shrinking the scheduler further to 3,904 bytes.
+Even combined with the message queue library and compartment, and the event group library, this now adds up to 8,304 bytes: less than the total size of the scheduler when we started.
+The total code size has shrunk, the size of the TCB for availability has shrunk a lot, and now the damage that an vulnerability in the event group or message-queue code can do is severely limited.
 
