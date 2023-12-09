@@ -7,7 +7,7 @@ author: "David Chisnall"
 ---
 
 This week, some of the CHERIoT team will be at [MICRO 2023](https://microarch.org/micro56/index.php) presenting the first paper about the CHERIoT platform:
-{% cite cheriotmicro2023 %}.
+{% cite 10.1145/3613424.3614266 %}.
 This paper describes the CHERIoT ISA extension and the microarchitectural techniques used to make it fast, with low area overhead.
 
 The paper describes how the same architecture can be supported on cores in two interesting places in the microcontroller design space.
