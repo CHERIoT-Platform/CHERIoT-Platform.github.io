@@ -7,6 +7,18 @@ layout: post
 
 <img src="images/fpga.jpeg" alt="FPGA running CHERIoT Ibex">
 
+## Latest news
+
+{% assign posts = site.posts %}
+{% for item in posts limit:4 %}
+  {%- assign date_format = site.minima.date_format | default: "%b %-d, %Y" -%}
+ - [*{{ item.title }}* - {{ item.date | date: date_format }}]({{ item.url }})
+{% endfor %}
+
+[More...](news)
+
+## About
+
 The Capability Hardware Extension to RISC-V for IoT (CHERIoT) platform was originally developed at Microsoft and is now part of an effort spanning multiple companies.
 It builds on top of [CHERI](https://cheri-cpu.org) to provide a solid foundation for secure embedded devices.
 CHERI provides referential integrity (pointers cannot be forged), spatial memory safety (pointers carry bounds that cannot be extended), call gates, and so on.
