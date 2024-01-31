@@ -1,0 +1,39 @@
+---
+layout: post
+title:  "🚩Flag day for the compiler / RTOS!🚩"
+date:   2024-01-31T16:00+00:00
+categories: rtos compiler relocations
+author: "David Chisnall"
+---
+
+The first public version of the CHERIoT ABI used different relocation types for read-only and read-write globals.
+These are accessed via either `pcc` or `cgp` (all memory accesses must be via some authorising capability).
+The former requires an `auipcc` instruction, the latter may use `auicgp` for large displacements but usually applies a linker relaxation and ends up using `cgp` directly.
+
+This set of different relocations caused some problems if you were inconsistent in use of `const` for globals defined in other compilation units.
+The difference between C and C++ interpretation of `const` for `extern` also introduced some problems that were visible using BearSSL from C++.
+
+The new design also centralises the logic in the linker, rather than splitting it between the compiler and linker, which should make exploring variations on the linkage model easier.
+
+The new version of the toolchain unifies these (see [the PR on the specification](https://github.com/microsoft/cheriot-sail/pull/33) for details of how).
+Unfortunately, this means that old object files are not compatible with the new linker and assembly that used these relocations explicitly needed to be updated.
+
+This means that you need to update *both* your compiler (the dev container is updated if you're using that, but you will need to re-pull it, if you built the toolchain yourself then you will need to update it) and the RTOS code together.
+Sorry for the inconvenience!
+
+If you see errors about unsupported relocation types, it's because `xmake` is being somewhat too aggressive about caching.
+Try deleting your `.xmake` and `build` directories.
+
+If you have existing assembly code that uses the relocations then it may need updating:
+
+ - `cheri_compartment_pccrel_hi` ➡ `cheriot_compartment_hi`
+ - `cheri_compartment_cgprel_hi` ➡ `cheriot_compartment_hi`
+ - `cheri_compartment_pccrel_lo` ➡ `cheriot_compartment_lo_i`
+ - `cheri_compartment_cgprel_lo_i` ➡ `cheriot_compartment_lo_i`
+ - `cheri_compartment_cgprel_lo_s` ➡ `cheriot_compartment_lo_s`
+
+This renaming also reflects the fact that these are specific to the CHERIoT platform and not (necessarily) used on other RISC-V CHERI targets.
+
+In somewhat happier news, the new dev container also brings in a newer version of the Ibex, which (as of [last week](https://github.com/microsoft/cheriot-ibex/commit/5c37f9a8f578b8cb3888439e88d67dd4404c9fd4)) now has the correct exception priorities.
+This let us remove the last [work around for Ibex bugs in the RTOS code](https://github.com/microsoft/cheriot-rtos/pull/167).
+
