@@ -26,7 +26,7 @@ This tool requires a few things on the command line:
 
 Let's take a look at some of the things that you can do.
 For the rest of this post, we'll assume that you're passing the `test-suite.json` from the test suite (with `-j`) and the `sail.json` that was used to build it for the Sail model (with `-b`).
-We'll just provide the Reqo query (`-q`) and the output.
+We'll just provide the Rego query (`-q`) and the output.
 
 The query can be used to inspect various properties.
 We can start with some very simple ones.
