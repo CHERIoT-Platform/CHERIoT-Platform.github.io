@@ -32,6 +32,7 @@ The CHERIoT project comprises several repositories:
  - The [CHERIoT RTOS](https://github.com/microsoft/cheriot-rtos), a clean-slate RTOS designed to take advantage of CHERIoT features.
    This provides the compartment model, a heap that can be safely shared across mutually distrusting compartments, and a host of other features.
  - [CHERIoT LLVM](https://github.com/CHERIoT-Platform/llvm-project) provides the toolchain for building the RTOS and other software that runs atop it.
+ - [CHERIoT-Audit](https://github.com/CHERIoT-Platform/cheriot-audit) provides tooling for auditing the isolation properties of CHERIoT firmware images.
  - The [CHERIoT Ibex](https://github.com/microsoft/cheriot-ibex), an area-optimised core that implements the ISA.
    This is very slightly larger than the Ibex with a 16-element Physical Memory Protection unit, yet provides object-granularity memory safety and scales to a number of compartments bounded only by available memory.
  - The [CHERIoT small and fast FPGA emulator](https://github.com/microsoft/cheriot-safe) platform.
