@@ -3,7 +3,7 @@ layout: post
 title:  "Compartmentalising network stacks with CHERIoT"
 date:   2024-03-08T12:00+00:00
 categories: rtos networking auditing
-author: "David Chisnall and Hugo Lefevre"
+author: "David Chisnall and Hugo Lefeuvre"
 ---
 
 This week, we have made the ongoing work on a [CHERIoT network stack](https://github.com/CHERIoT-Platform/network-stack) public and we will be demonstrating it at the Digital Security by Design all-hands meeting next week.
