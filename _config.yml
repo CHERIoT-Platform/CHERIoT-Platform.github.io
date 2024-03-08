@@ -17,6 +17,8 @@ plugins:
 markdown: kramdown
 kramdown:
   toc_levels: "2,3"
+  hard_wrap: false
+  input: GFM
 
 
 scholar:
