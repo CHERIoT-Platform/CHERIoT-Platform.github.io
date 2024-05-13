@@ -66,4 +66,4 @@ The demo then needs restarting.
 In the other mode, we believe it should be impossible to leak the secret (come and try!).
 If you make the compartment running the JavaScript interpreter crash then it will recover.
 
-Folks from SCI Semiconductor will be there, so if you're interested in buying CHERIoT microcontrollers (not FPGA simulations) then drop buy the stand!
+Folks from SCI Semiconductor will be there, so if you're interested in buying CHERIoT microcontrollers (not FPGA simulations) then drop by the stand!
