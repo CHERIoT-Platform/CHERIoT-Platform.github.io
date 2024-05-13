@@ -1,0 +1,69 @@
+---
+layout: post
+title:  "CHERIoT at CyberUK"
+date:   2024-05-13
+categories: conference
+author: "David Chisnall"
+---
+
+![CHERIoT demo at CyberUK](/images/IMG_20240513_175316.jpg)
+
+This week, we'll be doing some CHERIoT demos at CyberUK in Birmingham.
+If you're going to be at CyberUK, come and see us, we'll be at stand C2 in Hall 3 on level 4!
+
+We're doing two demos.
+One is the world's most over-engineered light switch.
+This is using a pair of Arty A7 FPGAs to run the CHERIoT Ibex and our prototype [compartmentalised network stack](https://github.com/CHERIoT-Platform/network-stack).
+This small example has ten compartments:
+
+ - The RTOS scheduler
+ - The RTOS shared heap allocator
+ - The FreeRTOS+TCP TCP/IP stack
+ - The BearSSL TLS 1.2 stack
+ - The FreeRTOS SNTP library
+ - The on-device firewall 
+ - The network control plane
+ - The FreeRTOS coreMQTT library
+ - The demo control loop, which fetches JavaScript bytecode from MQTT and manages watchdogs
+ - The JavaScript runner
+
+All of this (including the JavaScript VM) runs in a total of 256 KiB of RAM (for code and data), with complete spatial and temporal memory safety.
+Every network packet is in a separate heap allocation and so inherits the same use-after-free protection.
+
+The JavaScript uses one of the switches on the dev board to determine the mode.
+In one mode, it will publish the positions of two switches to the MQTT server, in the other it will subscribe to those MQTT nodes and 
+
+This shows an end-to-end CHERI client-server system.
+The tiny embedded devices are CHERIoT, the server side is [CheriBSD](https://www.cheribsd.org) on [Morello](https://www.morello-project.org).
+It's running the [Mosquitto](https://mosquitto.org) MQTT server, which is built as a CHERI pure-capability process and so also has complete spatial and temporal memory safety, though no compartmentalisation (yet!), on the server.
+This demonstrates a complete end-to-end CHERI deployment.
+
+![Two Arty A7s running CHERIoT Ibex and providing the word's most overegineered (but secure!) light switch](/images/IMG_20240513_175330.jpg)
+
+We're also showing off the [CHERIoT auditing tooling](https://github.com/CHERIoT-Platform/cheriot-audit) tooling for this demo.
+You can inspect the demo and see which compartments may allocate memory (and how much), which compartments may connect to network servers (and which addresses and ports), and so on.
+
+
+Our second demo is on the new [Sonata prototyping board from lowRISC](https://www.sunburst-project.org/tech-details/#sonata-low-cost-development-board).
+Unlike the Arty A7, this is specifically designed for prototyping CHERIoT systems.
+It's newer and so we don't have as much support for it in the RTOS, but it's designed with a rich set of peripherals that should make it a more interesting platform in the longer term.
+
+![A Sonata FGPA board running a CHERIoT compartmentalisation demo](/images/IMG_20240513_175337.jpg)
+
+On this system, we're showing a compartmentalisation demo, based on the [compartmentalisation exercise](https://github.com/microsoft/cheriot-rtos/tree/main/exercises/01.compartmentalisation).
+This is intended to simulate an attacker who has managed to launch a code reuse attack and is trying to impact either confidentiality or availability.
+Code reuse attacks on a CHERIoT system are incredibly hard and so we cheat: we provide a JavaScript interpreter with a set of FFI functions that allow you to load and manipulate pointers from the JavaScript that you load over the UART.
+
+There's also an native function exposed to JavaScript to report whether you've managed to correctly guess a secret.
+The memory address of the secret is printed at the start (assume that it's leaked via some other exploit).
+
+We've built this example in two versions.
+The first is close to the starting point for the exercise: everything is in one compartment.
+In this version, you can start from the compartment's global pointer and load the secret.
+You can also simply do a null-pointer dereference to crash the compartment.
+The demo then needs restarting.
+
+In the other mode, we believe it should be impossible to leak the secret (come and try!).
+If you make the compartment running the JavaScript interpreter crash then it will recover.
+
+Folks from SCI Semiconductor will be there, so if you're interested in buying CHERIoT microcontrollers (not FPGA simulations) then drop buy the stand!
