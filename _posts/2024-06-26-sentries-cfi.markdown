@@ -45,12 +45,12 @@ RISC-V has a single instruction for both jump to a register and jump-and-link to
 The non-linking version just uses the zero register (`cnull` on a CHERI system) as the link register.
 Murali's proposal ended up with the following interpretations of the instruction depending on the operands:
 
-cs1    | cd       | Used for        | Valid sentry types
---     | --       | --              | --
-`cra`  | `cnull`  | Function return | Return sentries
-≠`cra` | `cnull`  | Tail call       | Unsealed or interrupt inheriting forward sentry
-any    | ≠`cnull` | Function call   | Unsealed or interrupt inheriting forward sentry
-any    | `cra`    | Function call   | Unsealed or forward sentries
+cs1    | cd               | Used for        | Valid sentry types
+--     | --               | --              | --
+`cra`  | `cnull`          | Function return | Return sentries
+≠`cra` | `cnull`          | Tail call       | Unsealed or interrupt inheriting forward sentry
+any    | ∉{`cnull`,`cra`} | Function call   | Unsealed or interrupt inheriting forward sentry
+any    | `cra`            | Function call   | Unsealed or forward sentries
 
 We are treating `cjr cra` as a return instruction, so it must have a return.
 
