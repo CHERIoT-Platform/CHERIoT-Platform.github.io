@@ -4,6 +4,8 @@ title:  The CHERIoT philosophy is designed to prevent things like the CrowdStrik
 date:   2024-07-19
 categories: security philosophy
 author: David Chisnall
+redirect_from:
+  - /security/philosophy/2024/07/03/crowdstrike-is-the-opposite-of-cheriot.html
 ---
 
 The news today is full of reports about a Windows kernel driver from CrowdStrike causing large numbers of computers to be unbootable.
