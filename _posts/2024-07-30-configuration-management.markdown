@@ -7,6 +7,7 @@ author: Phil Day
 ---
 All systems rely on some form of configuration data.
 Fully immutable systems, where configuration is baked in at build time, may work for container based environments where re-deployment is relatively easy, but in other systems the configuration interface forms a significant part of the attack surface, and misconfiguration, whether accidental or malicious, is a major sources of security vulnerabilities.
+For example the recent CrowdStrike outage was caused by a bug in an in-kernel parser that crashed when given an new configuration value.  
 
 The solution in many cases is to create an often complex trust model around and within the configuration interface to limit and control configuration changes, where the complexity itself adds to the threat profile.
 The threat profile is further increased when we consider the need to process serialised data which may itself be compromised.
@@ -25,6 +26,7 @@ The compartment ensures memory violations have no impact on the broker or any ot
 Each parser has its own static sealed capability granting it the right to register with the broker as the parser for a specific item type.
 Running as stateless isolated sidecars to the broker ensures the integrity of the parsers; the only interface to a parser is via a sentry guarded callback that it registers with the broker, and registration is based on the content of tokens that only the broker can unseal.
 Build time [auditing](https://cheriot.org/book/top-concepts-top.html#_auditing_firmware_images) can ensure that parsers do not call any other compartments.
+In the context of the CrowdStrike issue the impact of the parser bug would have been fully contained within the parer compartment; the system wouldn't have been updatable, but it would have remained available.   
 
 This pattern of implementing strongly defined trust boundaries, treating all data as untrusted regardless of its origin, and recognising that the data may be harmful even to try and parse, is aligned with the [principles-based guidance](https://www.ncsc.gov.uk/collection/cross-domain-solutions) published by the National Cyber Security Centre (NCSC) for cross domain operations.
 In this case each CHERIoT compartment can be considered to be operating as a separate trust domain.
