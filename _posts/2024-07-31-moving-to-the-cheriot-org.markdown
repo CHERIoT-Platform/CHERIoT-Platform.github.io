@@ -7,7 +7,7 @@ categories: rtos sail
 author: David Chisnall
 ---
 
-I am please to announce that, today, Microsoft has transferred the [CHERIoT Sail](https://github.com/CHERIoT-Platform/cheriot-sail) and [CHERIoT RTOS](https://github.com/CHERIoT-Platform/cheriot-rtos) repositories into the CHERIoT-Platform GitHub organisation.
+I am pleased to announce that, today, Microsoft has transferred the [CHERIoT Sail](https://github.com/CHERIoT-Platform/cheriot-sail) and [CHERIoT RTOS](https://github.com/CHERIoT-Platform/cheriot-rtos) repositories into the CHERIoT-Platform GitHub organisation.
 GitHub *should* redirect everything from the old locations, but it's probably a good idea to update URLs in bookmarks, git clones, and so on.
 
 CHERIoT began as a research project in Microsoft Research Cambridge, as part of Microsoft's work on the [Digital Security by Design Programme](https://www.dsbd.tech).
@@ -18,23 +18,23 @@ The project's goal was to explore several aspects of CHERI system design, specif
  - How can you remove the need for bolted-on security extensions by creating a holistic hardware-software security model around an assumption of memory safety?
 
 As a research project, it was a resounding success.
-We demonstrated that a foundation of CHERI let you build tiny cores that provided a step change in the baseline security guarantees, along with a simple programmer model, in exchange for a tiny power and area overhead.
+[We demonstrated](https://www.microsoft.com/en-us/research/publication/cheriot-complete-memory-safety-for-embedded-devices/) that a foundation of CHERI let you build tiny cores that provided a step change in the baseline security guarantees, along with a simple programmer model, in exchange for a tiny power and area overhead.
 
-Microsoft; however, is not a microcontroller vendor and, for CHERIoT to be useful, it needed broad ecosystem support.
-This ecosystem is starting to grow.
-We have merged improvements to the ISA specification and various parts of the software stack from Google.
+Microsoft; however, is not a microcontroller vendor and, for CHERIoT to be useful, it needs broad ecosystem support.
+This ecosystem is forming, with several companies making significant early contributions.
+Google has contributed, and we have merged, improvements to the ISA specification and various parts of the software stack.
 SCI Semiconductor is working to ship commercial CHERIoT SoCs to customers next year.
 lowRISC has built the [Sonata FPGA platform](https://www.sunburst-project.org) for prototyping CHERIoT devices.
 Folks at [Configured Things](https://www.configuredthings.com) have written a [fantastic demo application](https://github.com/CHERIoT-Platform/cheriot-demos/tree/main/configuration_broker) (see [yesterday's blog for more information](/philosophy/2024/07/30/configuration-management.html).
 
-At this point, CHERIoT is no longer a research project, it is an open source foundation supported by multiple vendors and the repository moves reflect this fact.
+At this point, CHERIoT is no longer a research project, it is an open source foundation supported by multiple vendors and these repositories' moves reflect this fact.
 The CHERIoT-Platform organisation is now a centralised landing pad for anything CHERIoT related.
 
 The two repositories that have moved today are the ISA specification and the RTOS.
 These are core parts of the platform.
 
-The [CHERIoT Sail repository](https://github.com/CHERIoT-Platform/cheriot-sail) contains the ISA specification, including both the formal model and the prose descriptions.
-The formal model can be used to prove properties of the ISA, verify that implementations conform to the specification, verify properties of software running on CHERIoT cores, and also builds our golden model simulator.
+The [CHERIoT Sail repository](https://github.com/CHERIoT-Platform/cheriot-sail) contains the ISA specification, including both the formal model and the [prose descriptions](https://cheriot-platform.github.io/cheriot-sail/cheriot-architecture.pdf).
+This executable formal model can be used to prove properties of the ISA, verify that implementations conform to the specification, verify properties of software running on CHERIoT cores, and also build our golden model simulator.
 This repository contains everything that you need to be able to build a CHERIoT core and validate that it really implements the ISA.
 I believe that formal verification is a key part of any secure system.
 Formal specification is the foundation on which formal verification is built and I'm excited by the results we've seen so far from groups building on this.
@@ -63,7 +63,7 @@ We welcome additional implementations (open and proprietary) and have no wish to
 
 All of that said, the community engagement with CHERIoT Ibex has been amazing.
 It has been the focus of several formal verification efforts and I am very happy to see contributors from across industry and academia working to improve it.
-We will continue to include a cycle-accurate simulator of the Ibex in the [CHERIoT Dev Container](https://github.com/orgs/CHERIoT-Platform/packages/container/package/devcontainer) and will add any other implementations that are available under license that permit redistribution.
+We will continue to include a cycle-accurate simulator of the Ibex in the [CHERIoT Dev Container](https://github.com/orgs/CHERIoT-Platform/packages/container/package/devcontainer) and will add any other implementations that are available under licenses that permit redistribution.
 
 The CHERIoT Platform organisation currently has two maintainers: myself and Yucong Tao (Microsoft), and may add more in the future.
 Burdening a young project with too much bureaucracy early on is a sure way to kill it and so the administration is currently very light.
