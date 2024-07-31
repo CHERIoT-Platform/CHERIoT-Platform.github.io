@@ -25,7 +25,7 @@ This ecosystem is forming, with several companies making significant early contr
 Google has contributed, and we have merged, improvements to the ISA specification and various parts of the software stack.
 SCI Semiconductor is working to ship commercial CHERIoT SoCs to customers next year.
 lowRISC has built the [Sonata FPGA platform](https://www.sunburst-project.org) for prototyping CHERIoT devices.
-Folks at [Configured Things](https://www.configuredthings.com) have written a [fantastic demo application](https://github.com/CHERIoT-Platform/cheriot-demos/tree/main/configuration_broker) (see [yesterday's blog for more information](/philosophy/2024/07/30/configuration-management.html).
+Folks at [Configured Things](https://www.configuredthings.com) have written a [fantastic demo application](https://github.com/CHERIoT-Platform/cheriot-demos/tree/main/configuration_broker) (see [yesterday's blog for more information](/philosophy/2024/07/30/configuration-management.html)).
 
 At this point, CHERIoT is no longer a research project, it is an open source foundation supported by multiple vendors and these repositories' moves reflect this fact.
 The CHERIoT-Platform organisation is now a centralised landing pad for anything CHERIoT related.
