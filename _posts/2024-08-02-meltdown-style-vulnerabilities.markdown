@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Formal Security Verification for Meltdown-style Vulnerabilities"
+title:  "Formally verifying security properties of CHERI processors"
 date:   2024-08-02 14:00:00 +0100
 categories: formal verification security
 author: "Anna Duque Antón and Johannes Müller"
@@ -44,4 +44,9 @@ This is a significantly different approach compared to previous verification met
 VeriCHERI allows us to target not only security violations due to functional bugs, but also Meltdown-style timing side channels such as the one described above.
 At its core, VeriCHERI consits of only 4 security properties; these can be checked using the power of commercial property checking tools.
 Verification times for CHERIoT Ibex range from a few seconds to 31 minutes for detecting vulnerabilities in the original versions or to prove that the fixed design is secure.
-We refer interested readers to our [paper](https://arxiv.org/abs/2407.18679) about VeriCHERI.
+We refer interested readers to our [paper](https://arxiv.org/abs/2407.18679) about VeriCHERI {% cite vericheri2024 %}.
+
+Full citation
+-------------
+
+{% bibliography --cited %}
