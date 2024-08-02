@@ -10,7 +10,8 @@ In 2018, the two infamous attacks Spectre and Meltdown raised awareness of timin
 In the ensuing years, research efforts have been made by academia and industry to investigate and mitigate these findings.
 So far, the focus has been on larger cores with powerful performance optimizations such as out-of-order execution and speculation.
 But even small processors optimized for low-power environments and featuring in-order pipelines can be vulnerable to these attacks.
-In fact, we have used our new formal verification framework *VeriCHERI* to detect a vulnerability to a Meltdown-style attack in CHERIoT Ibex.
+We have used our new formal verification framework *VeriCHERI* to detect a vulnerability to a Meltdown-style attack in CHERIoT Ibex.
+This was [reported](https://github.com/microsoft/cheriot-ibex/issues/38) and [fixed](https://github.com/microsoft/cheriot-ibex/commit/876a46ab0746e7b6d7a31a72eb834737d8076aca) in May.
 
 ### What makes a timing attack *Meltdown-style*?
 
