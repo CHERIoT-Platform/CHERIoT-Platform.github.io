@@ -42,6 +42,6 @@ The key idea is that we start from abstract security requirements targeting conf
 Based on these general notions of security, we formulate security properties for the microarchitectural implementation.
 This is a significantly different approach compared to previous verification methods, which focus on verifying that the design conforms to a specification.
 VeriCHERI allows us to target not only security violations due to functional bugs, but also Meltdown-style timing side channels such as the one described above.
-At its core, VeriCHERI consits of only 4 security properties that can be checked using the power of commercial property checking tools.
+At its core, VeriCHERI consits of only 4 security properties; these can be checked using the power of commercial property checking tools.
 Verification times for CHERIoT Ibex range from a few seconds to 31 minutes for detecting vulnerabilities in the original versions or to prove that the fixed design is secure.
 We refer interested readers to our [paper](https://arxiv.org/abs/2407.18679) about VeriCHERI.
