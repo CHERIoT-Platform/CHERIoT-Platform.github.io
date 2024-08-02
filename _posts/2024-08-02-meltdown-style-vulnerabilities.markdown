@@ -7,7 +7,7 @@ author: "Anna Duque Antón and Johannes Müller"
 ---
 
 In 2018, the two infamous attacks Spectre and Meltdown raised awareness of timing side channels in the microarchitecture of modern processors.
-In the ensuing years, research efforts have been made by academia and industry to investigate and mitigate these findings.
+In the following years, ensuing research efforts have been made by academia and industry to investigate and mitigate these findings.
 So far, the focus has been on larger cores with powerful performance optimizations such as out-of-order execution and speculation.
 But even small processors optimized for low-power environments and featuring in-order pipelines can be vulnerable to these attacks.
 We have used our new formal verification framework *VeriCHERI* to detect a vulnerability to a Meltdown-style attack in CHERIoT Ibex.
