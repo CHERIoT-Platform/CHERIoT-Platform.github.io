@@ -42,3 +42,26 @@ The CHERIoT project comprises several repositories:
 The [CHERIoT dev container](https://github.com/orgs/CHERIoT-Platform/packages/container/package/devcontainer) includes the toolchain, the simulator built from the formal model, and a verilator simulation of the Ibex.
 This can be used explicitly via Docker / Podman or by opening the RTOS repository in Visual Studio Code or another editor that supports dev containers.
 
+## Getting started
+
+It's very easy to start developing for CHERIoT with either an [Arty A7](https://digilent.com/reference/programmable-logic/arty-a7/start) or [Sonata](https://www.sunburst-project.org) FPGA board, or with no hardware and using a simulator.
+The Sonata boards (which, unlike the A7, are designed specifically for prototyping CHERIoT-based systems) are [now available to buy from Mouser](https://www.mouser.co.uk/ProductDetail/NewAE/NAE-SONATA-ONE?qs=wT7LY0lnAe1k3dLvmL42Eg%3D%3D).
+
+The [CHERIoT Getting Started Guide](https://github.com/CHERIoT-Platform/cheriot-rtos/blob/main/docs/GettingStarted.md) explains how to build and run code for all of these.
+
+We also have a [From zero to CHERIoT in two minutes with Sonata](https://cheriot.org/fpga/ibex/2024/06/10/sonata-quick-start.html) blog post hat explains how to start building and running code on Sonata in about the same amount of time as it will take you to get the board out of its box and plug it in.
+
+
+## Where to ask questions
+
+We use [GitHub Discussions](https://github.com/orgs/CHERIoT-Platform/discussions) for general queries about CHERIoT.
+This is persistent and searchable (without an account) and so a good place to ask questions that someone else may want to know the answer to.
+
+We also have a [public Signal chat](https://signal.group/#CjQKIElxAs3t3MUEMOEmQEuMHRK4rErUk2xVeFzjAjFXAShzEhCK9qQwEMFKGLGZnCjrQ7zm).
+The Signal chat is intended for live discussions and automatically deletes messages.
+We encourage participants to write up the results of any discussions there in documentation, GitHub Discussions, Issues, or somewhere else that's searchable.
+You can join the group from your phone by scanning this QR code:
+
+<p style="text-align: center; margin-left: auto; margin-right: auto">
+<img src="images/signal-group-qr-code.png" width="100pt" alt="QR Code for joining the CHERIoT Signal public chat">
+</p>
