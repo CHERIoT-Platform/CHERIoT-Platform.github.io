@@ -7,9 +7,9 @@ author: David Chisnall
 ---
 
 The CHERIoT compartment model is similar to an object-oriented model, where each compartment exposes a set of entry points (analogous to methods) that can be called by other compartments.
-This works well for compartmentalising a lot of libraries: expose their public API as compartment entry points.
+This works well for compartmentalising a lot of libraries: just expose their public API as compartment entry points.
 
-One of the common questions from people starting to some existing code in a compartment is: How do I export a global from this library?
+One of the common questions from people starting to put some existing code in a compartment is: How do I export a global from this library?
 To which the obvious answer is: what does that even mean?
 
 When you expose a function from a compartment, the security properties are well defined.
@@ -82,7 +82,7 @@ This brings me to the last part, the [cheriot-audit integration](https://github.
 
 This adds some helper functions for inspecting shared objects.
 For example, we have two pre-shared objects associated with the allocator.
-The hazard-pointer list is accessible only by the allocator (a subset of it for the current thread can be read via a call to the switcher).
+The hazard-pointer list is accessible only by the allocator (a capability to a subset of it for the current thread can be obtained via a call to the switcher).
 The epoch counter can be read by anything but must be written only by the allocator.
 We have added this to the RTOS policy like this:
 
