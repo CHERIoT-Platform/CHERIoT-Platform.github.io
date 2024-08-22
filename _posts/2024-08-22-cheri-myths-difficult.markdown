@@ -37,7 +37,7 @@ I'm not trying to work backwards from a point where my heap or stack is corrupte
 The first use of a dangling pointer or the first out-of-bounds access to an object will trigger a CHERI exception and point to precisely the instruction that is doing the wrong thing.
 
 Note that all of this is about *incorrect* code.
-CHERI C and C++ try very hard to give you a standards-compliant (and de-factor standards-compliant, allowing things that the standard leaves open to implementations but everyone assumes are fine) implementation.
+CHERI C and C++ try very hard to give you a standards-compliant (and de-facto standards-compliant, allowing things that the standard leaves open to implementations but everyone assumes are fine) implementation.
 Almost all of the C and C++ code that we've tried to run on CHERIoT has worked with no source-code modifications.
 Most of these are well-tested codebases, sometimes MISRA C with loads of static analyses run, which *probably* don't have any memory-safety bugs.
 
