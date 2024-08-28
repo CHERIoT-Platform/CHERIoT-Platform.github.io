@@ -113,7 +113,6 @@ This may be in the form of timing side channels, or more subtle things such as c
 This doesn't always apply.
 For more common tasks, the metaprogramming facilities in a higher-level language may make the rewrite significantly simpler to write and maintain than a C original.
 
-
 ## CHERI does not fix bugs for you
 
 CHERI doesn't guarantee that your code is free from memory-safety errors, it guarantees that any memory-safety bugs will trap and not affect confidentiality or integrity of your program.
@@ -180,7 +179,7 @@ The [`cheriot-audit` tool](https://github.com/CHERIoT-Platform/cheriot-audit) le
 You can reason about the damage from a compromise even if an attacker can gain arbitrary-code execution in a compartment.
 For supply-chain security, you should assume that a third-party component is compromised and includes malicious code.
 CHERIoT lets you reason about what it can do in these cases.
-In contrast, if a Java or Rust component is malicious and uses (intentional or otherwise) unsafe language features, it can to anything that the program can do.
+In contrast, if a Java or Rust component is malicious and uses (intentional or otherwise) unsafe language features, it can do anything that the program can do.
 
 ## The future should be safe languages on CHERI
 
