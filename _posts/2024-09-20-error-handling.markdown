@@ -7,7 +7,7 @@ author: "David Chisnall"
 ---
 
 CHERI platforms in general, and CHERIoT in particular, can turn a lot of bugs that would be silent data corruption into recoverable errors.
-The 'recoverable' part comes from the fact that the error is caught *before* you perform the invalid operation.
+The 'recoverable' part comes from the fact that any error is caught *before* an invalid operation succeeds.
 
 In [CheriBSD](https://www.cheribsd.org) and the proposed CHERI extensions to POSIX, CHERI faults are delivered as signals.
 In CHERIoT RTOS, we have a similar mechanism.
@@ -16,7 +16,7 @@ This can be used to perform low-level error recovery operations, such as skippin
 
 Custom error handlers are quite difficult to write.
 In addition, the design made it impossible to run them when the fault was caused by stack exhaustion.
-Although we have [tools to help avoid stack overflows](https://cheriot.org/rtos/stack/programming/2024/05/01/stack-usage.html), these still happen (particularly when incorporating third-party code) and it's nice to have a general mechanism for using them.
+Although we have [tools to help avoid stack overflows](https://cheriot.org/rtos/stack/programming/2024/05/01/stack-usage.html), these still happen (particularly when incorporating third-party code) and it's nice to have a general mechanism for handling them.
 
 With a few recent PRs, we've built a much more developer-friendly mechanism for handling errors.
 
@@ -84,19 +84,22 @@ If we built a linked-list of `jmp_buf`s there, then it would be possible for the
 This would be bad.
 
 What we want is not *thread-local* storage but *compartment-invocation-local* storage.
-Each time a thread enters a new compartment, you should get some storage that is not tied to the depth in the control stack.
+Each time a thread enters a new compartment, you should get some storage that is not local to the current function but can be accessed from any nested call.
 
 To implement this, we looked at the earliest way that operating systems have implemented thread-local storage: reserve some space at the top of the stack.
 
+When the switcher transitions between compartments, it truncates the stack so that the callee doesn't have access to the caller's stack.
 Now, on entry into a compartment, the switcher will move the stack pointer 16 bytes down before transferring control into the callee.
 Similarly, the loader will reserve 16 bytes at the top of the stack before starting a thread.
 
 This means that you have two pointers worth of space that are easy to find (set the address of the stack pointer to its top, then set the address to eight or 16 bytes below that).
-CHERIoT has a convenient `cgettop` instruction and so this sequence is very short.  First, `cgettop` gives the top address, then `csetaddress` gives a new capability derived from the stack pointer that points to the address.  After that, a `-8` immediate offset to a load or store capability instruction can access the space, so we need only three instructions to load the head of the list.
+CHERIoT has a convenient `cgettop` instruction and so this sequence is very short.
+First, `cgettop` gives the top address, then `csetaddress` gives a new capability derived from the stack pointer that points to the address.
+After that, a `-8` immediate offset to a load or store capability instruction can access the space, so we need only three instructions to load the head of the list.
 
-With this, we can store the head of the linked list of error handlers at the top of the stack.
+With this, we can store the head of the linked list of error handlers at the top of the stack for the current compartment invocation.
 When you want to jump to the nearest error handler, find the head of the list relative to the stack pointer, pop it, and pass it to `longjmp`.
-The `cleanup_unwind` does all of this for you, so typically you won't need to ever see that this is how it's implemented.
+The `cleanup_unwind` function does all of this for you, so typically you won't need to ever see that this is how it's implemented.
 
 # Handling errors even in the presence of stack overflow
 
@@ -116,7 +119,7 @@ But what happens if you want to jump to the nearest error handler registered as 
 First, the CPU will trap because a `csp`-relative load fails because `csp` (the capability stack pointer register) is untagged.
 This transitions to the switcher.
 The switcher will then find that you need to run the stackless error handler (because `csp` is untagged).
-The switcher will then look at the trusted stack and rederive the `csp` value that you had on entry.
+The switcher will then look at the trusted stack and rederive the `csp` value that your compartment had on entry.
 
 The stackless error handler *does* have a stack, but it doesn't have a *stack frame*.
 When it's invoked, it can guarantee that `csp` is a capability that authorises access to the stack, but it can't guarantee anything about the address of that capability (other than that it will be in bounds).
@@ -138,7 +141,7 @@ C programmers have to use the macro-based version, which looks like this:
 ```c
 CHERIOT_DURING
 {
-    // Do some things that may cause a 
+    // Do some things that may cause a crash
 }
 CHERIOT_HANDLER
 {
@@ -166,7 +169,7 @@ Hopefully this is much easier than writing a custom error handler that detected 
 
 This isn't a full exception model.
 In particular, there's currently no way in the handler of seeing the cause of the fault.
-In a future iteration, we'll add something like 'Herbceptions': Herb Sutter's proposal for C++ where exceptions must be preallocated objects or primitive values.
+In a future iteration, we'll add something like 'Herbceptions': Herb Sutter's [proposal for C++ where exceptions must be preallocated objects or primitive values](https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p0709r4.pdf).
 
 This mechanism is designed to be simple and lightweight, not to be as generic as something that you'd build on a complex system.
 You can protect something against faults with a single C++ wrapper function and 40 bytes of stack space.
