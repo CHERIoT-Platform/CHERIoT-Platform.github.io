@@ -26,7 +26,7 @@ Exceptions are a common mechanism for reporting errors.
 Exceptions are a form of non-local return: they transfer control flow to a function higher up the stack to report the error.
 
 On most modern platforms, exceptions are implemented using a *table-driven unwinder*.
-The exact details differ between 64-bit Windows and *NIX systems, but the underlying mechanisms are very similar.
+The exact details differ between 64-bit Windows and \*NIX systems, but the underlying mechanisms are very similar.
 For each function, the compiler emits a table that describes how to unwind the stack.
 A generic unwinder library can read this information and pop each frame off the call stack, one at a time.
 Language-specific exceptions are built on top of this.
