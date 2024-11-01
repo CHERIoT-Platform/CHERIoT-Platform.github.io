@@ -47,7 +47,7 @@ CHERIoT ISA v 2.0
 Our goal with the 2.0 release of the CHERIoT ISA is to rebase on top of the official Zcheripurecap extension, once this has been ratified.
 
 We expect to be able to provide compatibility between 1.0 and 2.0, such that anything that isn't machine code can run on both.
-RISC-V International will assign new opcodes for the CHERI instructions and so this release won't be binary compatible, but we expect to be able to maintain source compatibility.
+We anticipate that RISC-V International will assign new opcodes for the CHERI instructions and so this release won't be binary compatible, but we expect to be able to maintain source compatibility.
 
 This will likely require a compatibility file of assembly macros because the official standard renames most instructions to make them ~~less readable~~ more consistent with RISC-V naming conventions.
 For C and higher-level languages, the compiler will produce different instructions, but with the same abstract machine.
@@ -62,7 +62,7 @@ What does CHERIoT have that Zcheri doesn't?
 CHERIoT makes a lot of use of one of the concepts that's been in CHERI since the beginning: sealing.
 Sealing is how we build type-safe opaque types.
 This, in turn, is how we build software capability systems.
-I believe sealing is essential to providing a robust compartmentalisation model, but it's not necessary for single-trust-domain memory safety.
+We believe sealing is essential to providing a robust compartmentalisation model, but it's not necessary for single-trust-domain memory safety.
 
 Zcheri defines a reduced subset of sealing, which is sufficient to provide sentries, but not the rich set of features that we use.
 The core ISA leaves room for expansion and so this is easy to add to the current drafts as a CHERIoT-specific extension (and possibly an optional Zcherisealing extension later).
@@ -88,7 +88,7 @@ With CHERI, this may be 4095 bytes out of bounds of the program counter capabili
 When you scale a capability encoding down to 32 bits and short pipelines, representing 4 KiB out-of-bounds values adds some unfortunate complexity.
 We have some proposed formats that will allow this, but microarchitects have estimated that it will hit the maximum frequency of short pipelines by as much as 10%.
 
-In CHERIoT, we reduce the shift in `AUIPCC` by one.
+To accommodate encodings with a restricted out-of-bounds representable region in CHERIoT, we reduce the shift in `AUIPCC` by one.
 This means that there's a one-bit overlap between the immediate in add / load / store instructions and `AUIPCC`.
 The loader can determine the direction of the addition in `AUIPCC` and ensure that the result is always somewhere between the current PCC value and the target, which means that it never goes out of bounds.
 The down side of this is that all functions that you call directly and all PC-relative globals must be within 2 GiB of each other instead of 4 GiB.
