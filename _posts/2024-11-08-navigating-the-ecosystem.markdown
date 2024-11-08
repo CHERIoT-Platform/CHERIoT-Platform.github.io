@@ -27,7 +27,7 @@ On the plus side the CI system and maintainers do a good job of keeping it all c
 
 #### [cheriot-rtos](https://github.com/CHERIoT-Platform/cheriot-rtos.git)
 Cheriot-rtos is the core of the system, an includes its own set of examples that provide a great introduction to the main CHERI features.
-You don't even need any hardware to run them, as by default they build for one of the two emulator environments (sail and ibex-safe-simulator) that are included in dev container.
+You don't even need any hardware to run them, as by default they build for one of the two emulator environments (sail and ibex-safe-simulator) that are included in the dev container.
 The ReadMe file in the examples directory has a good description of what each does and how to build the and run them.
 You can also build and run the examples on the Sonata board, but remember to also set up the terminal emulator in another window or you won't see any output.
 
