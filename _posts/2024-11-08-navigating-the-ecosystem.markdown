@@ -22,7 +22,7 @@ You can find the image name to pull in the .devcontainer/devcontainer.json file.
 
 The CHERIoT ecosystem is split across a number of git repositories, and makes extensive used of [submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules) to link them and other external code from other places such as FreeRTOS.
 There is no version or release tagging in the repos, so you can only tell how current a submodule is by comparing the commit hashes.
-Versioning will start with the CHERIoT 1.0 release, which you can track [here[(https://github.com/orgs/CHERIoT-Platform/projects/2).
+Versioning will start with the CHERIoT 1.0 release, which you can track [here](https://github.com/orgs/CHERIoT-Platform/projects/2).
 On the plus side the CI system and maintainers do a good job of keeping it all compatible, and any breaking changes are discussed in the Signal channel.
 
 #### [cheriot-rtos](https://github.com/CHERIoT-Platform/cheriot-rtos.git)
