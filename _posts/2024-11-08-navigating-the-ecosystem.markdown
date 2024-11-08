@@ -18,10 +18,6 @@ One word of warning though; cheriot and Sonata both uses the ":latest" tag as th
 If you've pulled an update to a repo and builds starts failing with no apparent reason it's worth pulling the latest dev container image and relaunching the dev container.
 You can find the image name to pull in the .devcontainer/devcontainer.json file.
 
-### Connecting up a Sonata Board
-[From zero to CHERIoT in two minutes with Sonata](https://cheriot.org/fpga/ibex/2024/06/10/sonata-quick-start.html) covers how to extend a dev container to include a Sonata board.
-If you're going to be running any of the examples with console output to also run a terminal emulator such as [picocom](https://linux.die.net/man/8/picocom) or [putty](https://www.putty.org/) on whichever tty / COM port the Sonata board is connected to. 
-
 ### Which Repo do I use ?
 
 The CHERIoT ecosystem is split across a number of git repositories, and makes extensive used of [submodules](https://git-scm.com/book/en/v2/Git-Tools-Submodules) to link them and other external code from other places such as FreeRTOS.
@@ -65,6 +61,11 @@ Lowrisc instead suggest using [nix](https://nixos.org/), and the startup guide i
 The dev container seems to also provides a nix setup, although it's not the easiest thing to use.
 I found for example that the default (nix-devshell) terminal wouldn't launch and I had to select bash terminal instead, and within that run everything as root. 
 This also has a submodule of cheriot-rtos, but it's a fork that has a few Sonata changes waiting to be upstreamed.
+
+### Connecting up a Sonata Board
+[From zero to CHERIoT in two minutes with Sonata](https://cheriot.org/fpga/ibex/2024/06/10/sonata-quick-start.html) covers how to extend a dev container to include a Sonata board.
+
+If you're going to be running any of the cheriot-rtos examples with console output then you also need to run a terminal emulator such as [picocom](https://linux.die.net/man/8/picocom) or [putty](https://www.putty.org/) on whichever tty / COM port the Sonata board is connected to. 
 
 
 
