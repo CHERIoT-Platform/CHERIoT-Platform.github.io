@@ -5,7 +5,7 @@ date:   2024-11-08
 categories: rtos sonata git
 author: Phil Day
 ---
-With a new set of folks in the DSbD cohort 6 just getting started with their Sonata boards I thought it might be useful to capture some of the things I've learn in the last few months about the ecosystem.
+With a new set of folks in the DSbD cohort 6 just getting started with their Sonata boards I thought it might be useful to capture some of the things I've learnt in the last few months about the ecosystem.
 
 ### Setting up a dev environment
 The easiest and quickest way to get up and running is to use the dev container.
