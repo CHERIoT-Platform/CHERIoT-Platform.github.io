@@ -11,7 +11,7 @@ I understand some of the rationale behind these claims, but the claims themselve
 The claims are usually of the form 'our code may contain memory-safety bugs but they don't impact the safety-critical parts and so it's better to leave them'.
 This is a dangerous view, as I will explain below.
 
-## Why are memory-safety errors bad?
+## Why are memory-safety errors so bad?
 
 Before we go into detail about what CHERI gives and why this may or may not be problematic, it's worth reconsidering why memory safety bugs are bad.
 We often quote the Microsoft and Google numbers that 70% of vulnerabilities come from memory-safety bugs but if you dig deeper you'll see that the severity of memory-safety bugs is often disproportionately high.
@@ -30,9 +30,10 @@ if (uid = 0)
 The programmer thought that they were checking the user ID was the root user, but in fact they were assigning the root user ID to the `uid` variable.
 This kind of bug is often a critical vulnerability because it can directly lead to privilege elevation.
 You can tell, because you can look at where the `uid` variable is used later and follow the control flow throughout the source code of the program.
+For those who don't read C: `==` compares two values and evaluates to zero or one depending on whether they're equal, `=` assigns the right value to the left but evaluates to the right value, which the `if` statement then compares to zero (any non-zero value is true in C).
 
 With a memory-safety bug, you cannot do this.
-If you write outside the bounds of a buffer, or through a dangling pointer, then you have stepped outside of the language's abstract machine.
+If you write outside the bounds of a buffer, or through a dangling pointer, then you have stepped outside of the language's *abstract machine* and into the world of *undefined behaviour*.
 The compiler will assume that this cannot happen when optimising and so may:
 
  - Reorder loads and stores, for example by pulling your memory-safety bug out of a loop.
@@ -93,8 +94,8 @@ CHERI lets you enforce properties even in the unsafe dialects of safe languages,
 To answer the complaint about CHERI trapping, it's worth considering what happens if you have a memory-safety bug today.
 You will see one of the following:
 
- - It's deterministically benign, reads some constant or write over something that's never read.
- - It's deterministically out of a mapped / accessible region will be caught by your MMU / MPU and trap (so we are not worse)
+ - It's deterministically 'benign', reads some constant or write over something that's never read.
+ - It's deterministically out of a mapped / accessible region will be caught by your MMU / MPU and trap.
  - It's deterministically leaking information or corrupting other state.
  - It's data dependent and so will nondeterministically do one of the above three options.
 
@@ -107,7 +108,7 @@ Any change to the compiler, or the global memory layout, may turn them from beni
 Modern compilers support reproducible builds, but unless you're using all of the options to enable them then even recompiling the same source with the same compiler may trigger these issues.
 
 Memory safety bugs exist outside of the language abstract machine and so may do a different non-deterministic thing.
-Moving to a different SoC with a different memory layout and a different set of instructions may change these benign bugs into data corruption that affects safety-critical operation.
+Moving to a different SoC with a different memory layout and a different set of instructions may change these so-called benign bugs into data corruption that affects safety-critical operation.
 It is absolutely not acceptable to claim that you have a safety-critical system if that safety depends on behaviour that is not specified.
 
 In the second case, the only change is the trap reason and the fact that the trap on a CHERI system gives you more information.
@@ -147,7 +148,7 @@ CHERIoT RTOS provides three ways for a compartment to handle CHERI failures (and
 For stateless compartments, the last is often the right approach: if something goes wrong, let the caller know.
 This is often the best fit approach for safety-critical systems, where things should *never* go wrong and you've got static analysis receipts to demonstrate this.
 
-If you're relying on the notion of a 'benign' error, the first kind of error handler helps you emulate the current behaviour (though I don't recommend it if you actually care about correctness!).
+If you're relying on the notion of a 'benign' error, the first kind of error handler can (among other things) be used to emulate the current behaviour (though I don't recommend it if you actually care about correctness!).
 You can decode the current instruction and determine whether it's a load or store.
 If it's a store, you can skip it, if it's a load you can also put a zero in the target register.
 Ideally, you'd also write some telemetry that would let you fix the bug.
