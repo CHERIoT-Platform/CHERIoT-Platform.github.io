@@ -78,7 +78,7 @@ If you can write *new* code in a safe language, especially a safe language that 
 
 Will a team that rewrites a legacy codebase or one that incrementally improves one have fewer bugs in their codebase?
 If you rewrite existing code in a safe language then you can guarantee, by construction, that the code does not have bugs in the category that the language enforces.
-The value of this can't be understated.
+The value of this can't be overstated.
 Knowing that code that compiles is free from a particular class of error has a huge value.
 
 In spite of this improvement, there remains a big difference between 'memory safe' and 'correct'.
