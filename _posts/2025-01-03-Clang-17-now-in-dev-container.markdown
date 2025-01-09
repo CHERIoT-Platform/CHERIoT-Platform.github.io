@@ -81,6 +81,7 @@ If your development board does not contain the fix, you will need to pass `-enab
 We have added automatic support for enabling this flag when required to the CHERIoT RTOS build system prior to enabling the optimization by default.
 - [Improved code quality](https://github.com/CHERIoT-Platform/llvm-project/issues/85) for unaligned memory accesses.
 We've seen this particularly benefitting some cryptographic code.
+Note that you need to be using an up-to-date SAIL simulator that supports misaligned memory accesses by default, or, if using an older simulator, you will need to pass `-m` to the simulator explicitly to enable them.
 
 ## Looking Forward
 
