@@ -22,7 +22,7 @@ Since landing the Clang 17 rebase, we've been busy bringing bugfixes and enhance
 
 ### Language & Usability Improvements
 
-- [Emplemented](https://github.com/CHERIoT-Platform/llvm-project/commit/025c5d452e8935ebbe2a09d78fb2a10c1c96a626) a new Clang diagnostic to warn on compartment exports that return void, or where the return value is unused.
+- [Implemented](https://github.com/CHERIoT-Platform/llvm-project/commit/025c5d452e8935ebbe2a09d78fb2a10c1c96a626) a new Clang diagnostic to warn on compartment exports that return void, or where the return value is unused.
 This is important in practice, because cross-compartment calls can fail in the compartment switcher, and void returns make this failure undetectable.
 These warnings are disabled by default until CHERIoT RTOS has been updated for them, and are controlled by the `-Wcheri-compartment-return-void` compiler flag. Thanks to [Robert Dazi](https://github.com/v01dXYZ) for this one!
 
