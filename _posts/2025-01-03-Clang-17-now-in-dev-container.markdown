@@ -79,15 +79,16 @@ We haven't observed this making a significant performance or size difference, bu
 However, this optimization uncovered an issue in the CHERIoT ISA related to return sentinels that has since been [fixed in the specification](https://github.com/CHERIoT-Platform/cheriot-sail/issues/85).
 If your development board does not contain the fix, you will need to pass `-enable-machine-outliner=never` to the compiler.
 We have added automatic support for enabling this flag when required to the CHERIoT RTOS build system prior to enabling the optimization by default.
+- [Improved code quality](https://github.com/CHERIoT-Platform/llvm-project/issues/85) for unaligned memory accesses.
+We've seen this particularly benefitting some cryptographic code.
 
 ## Looking Forward
 
-We have a number of further improvements that we expect to make available to CHERIoT toolchain users in the near future:
+We have one major improvement in the works that we hope to make available to CHERIoT toolchain users soon: [sealed capability annotations](https://github.com/CHERIoT-Platform/llvm-project/pull/88).
 
-- [Supporting sealed capabilities](https://github.com/CHERIoT-Platform/llvm-project/pull/88) in the C type system.
 This change adds a new pointer attribute `__sealed_capability`, which disallows any operations that would cause the pointer to be dereferenced, or to be lose its `__sealed_capability` annotation.
 Once integrated with CHERIoT RTOS, we will be able to represent sealing, unsealing, and the propagation of sealed capabilities in a type-safe manner.
-This is demonstrated below.
+
 ```c++
 // CHERI sealing and unsealing operations now have signatures that are type-safe with respect to sealing.
 void * __sealed_capability cheri_seal(void *cap, const void *type);
@@ -98,5 +99,5 @@ int func(int * __sealed_capability ptr) {
     return *p;
 }
 ```
-- [Improving code quality](https://github.com/CHERIoT-Platform/llvm-project/issues/85) for unaligned memory accesses.
-We've seen this particularly benefitting some cryptographic code.
+
+We expect that integrating sealed capabilities into the type system will result in more ergonomic and less error-prone programming when dealing with sealing and unsealing operations, as well as detecting most incorrect dereferences of sealed capabilities at compile time.
