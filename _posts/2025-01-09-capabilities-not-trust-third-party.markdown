@@ -1,10 +1,11 @@
 ---
 layout: post
-title:  "Exploiting Capabilities" 
-date:   2025-01-09
+title: "Using capabilities instead of trusting 3rd party code"
+date:   2025-01-08
 categories: rtos cheri
 author: Phil Day
 ---
+
 When getting started with CHERI it's easy to think of capabilities as just a better form of pointer that the compiler will set up and manage on your behalf.
 And of course there are a lot of memory safety benefits that come for free from that, but the real value is unlocked when you start to manipulate capabilities directly to capture intent.
 Let me illustrate with a simple example.
@@ -73,9 +74,11 @@ void publish(SObj        mqtt,
 	}
 }
 ```
+
 Note that when setting the bounds of a capability there may be rounding considerations to account for alignment.
-Using set_inexact() will return a valid capability that will be rounded up as needed.
-Using the following would instead return an invalid capability if statusLength could not be exactly represented in the bounds of a capability. 
+Using `set_inexact()` will return a valid capability that will be rounded up as needed.
+Using the following would instead return an invalid capability if `statusLength` could not be exactly represented in the bounds of a capability. 
+
 ```c++
    ...
    roStatus.bounds() = statusLength;
