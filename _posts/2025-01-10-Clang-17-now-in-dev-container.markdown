@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Clang 17 now in dev container, and other toolchain news"
-date:   2025-01-23
+date:   2025-01-10
 categories: cheri toolchain
 author: Owen Anderson
 ---
