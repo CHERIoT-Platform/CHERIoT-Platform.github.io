@@ -24,18 +24,20 @@ int __cheri_compartment("MQTT") mqtt_publish(Timeout    *t,
 ```
 
 and has the following comment about their scope:
-
-_Both the topic and payload buffers must remain valid during the execution of this function._
-_If the caller frees them during the execution of this function, the publish may leak application data to the broker through the topic and payload._
+>```
+>Both the topic and payload buffers must remain valid during the execution of this function.
+>If the caller frees them during the execution of this function, the publish may leak application data to the broker through the topic and payload.
+>```
 
 Ok, so it seems clear that I only need to make sure that they remain valid and unchanged until the call returns, but I was hitting a bug that seemed to suggest they might be being used outside of that by another thread in the network stack.
-_It turns out I was wrong about that BTW, but anyway I'm a suspicious kind of guy when it comes to trusting external modules._
-A quick look through the code quickly persuaded me that a) I'm not very good at reading other peoples code and b) it was probably not the issue but I still wanted to rule it out.
+> _It turns out I was wrong about that BTW, but anyway I'm a suspicious kind of guy when it comes to trusting external modules._
+
+A quick look through the code quickly persuaded me that: a) I'm not very good at reading other people's code; and b) it was probably not the issue but I still wanted to rule it out.
 
 Luckily by thinking of these in terms of capabilities rather than pointers I can directly implement my intent rather that trust what the library is telling me.
 Specifically I can derive new capabilities that are read only and can't be captured.
 So I can be guaranteed that at the end of the call nothing in the network stack can have modified the message or saved a reference to it.
-And for good measure I can also limit the bounds so that I don't have to trust that the MQTT code will only read within topicLength and payloadLength.
+And for good measure I can also limit the bounds so that I don't have to trust that the MQTT code will only read within `topicLength` and `payloadLength`.
 This is what the resulting code looks like in my demo:
 
 ```c++
@@ -87,5 +89,5 @@ Using the following would instead return an invalid capability if `statusLength`
 
 
 So by explicitly using the extra controls that CHERIoT provides we can eliminate any trust relationship between our code and some third party module and its compilation environment.
-The CHERI processor will guarantee that the MQTT library can only use the pointers we supply in the way we intend it to, even if the library is implemented to make use of compiler escape hatches such as "unsafe".
+The CHERI processor will guarantee that the MQTT library can only use the pointers we supply in the way we intend it to, even if the library is implemented to make use of compiler escape hatches such as "`unsafe`".
 And that's a significant step forwards in creating safe and reliable systems.
