@@ -32,7 +32,7 @@ and has the following comment about their scope:
 Ok, so it seems clear that I only need to make sure that they remain valid and unchanged until the call returns, but I was hitting a bug that seemed to suggest they might be being used outside of that by another thread in the network stack.
 > _It turns out I was wrong about that BTW, but anyway I'm a suspicious kind of guy when it comes to trusting external modules._
 
-A quick look through the code quickly persuaded me that: a) I'm not very good at reading other peoples' code; and b) it was probably not the issue but I still wanted to rule it out.
+A quick look through the code quickly persuaded me that: a) I'm not very good at reading other people's code; and b) it was probably not the issue but I still wanted to rule it out.
 
 Luckily by thinking of these in terms of capabilities rather than pointers I can directly implement my intent rather that trust what the library is telling me.
 Specifically I can derive new capabilities that are read only and can't be captured.
