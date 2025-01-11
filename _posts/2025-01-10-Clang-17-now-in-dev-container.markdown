@@ -87,7 +87,7 @@ Note that you need to be using an up-to-date SAIL simulator that supports misali
 
 We have one major improvement in the works that we hope to make available to CHERIoT toolchain users soon: [sealed capability annotations](https://github.com/CHERIoT-Platform/llvm-project/pull/88).
 
-This change adds a new pointer attribute `__sealed_capability`, which disallows any operations that would cause the pointer to be dereferenced, or to be lose its `__sealed_capability` annotation.
+This change adds a new pointer attribute `__sealed_capability`, which disallows any operations that would cause the pointer to be dereferenced, or to lose its `__sealed_capability` annotation.
 Once integrated with CHERIoT RTOS, we will be able to represent sealing, unsealing, and the propagation of sealed capabilities in a type-safe manner.
 
 ```c++
