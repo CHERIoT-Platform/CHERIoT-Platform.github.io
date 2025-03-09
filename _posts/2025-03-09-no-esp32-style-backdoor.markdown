@@ -49,7 +49,7 @@ This compartment is trusted for network availability (it can always drop incomin
 
 If you look at the audit report for this compartment you can see that it has access to:
 
- - A bunch of C library routines (`memcpy`, atomic add, and so on friends).
+ - A bunch of C library routines (`memcpy`, atomic add, and so on).
  - The MMIO region for the network device.
  - A capability that authorises it to wait on and acknowledge the interrupt associated with the network device.
  - Allocator APIs for memory allocation and a capability for a small heap quota.
