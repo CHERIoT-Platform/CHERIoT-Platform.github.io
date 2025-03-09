@@ -13,7 +13,7 @@ The news is somewhat overhyped (the attacks *probably* require physical access) 
 
 The vulnerability is in binary-only Bluetooth drivers.
 The obvious response is 'use only open-source code'.
-That's a nice place to be, and one that (as an open-source platform, we strongly encourage!) but it's not always possible and doesn't always fix the problem.
+That's a nice place to be (and one that as an open-source platform, we strongly encourage!) but it's not always possible and doesn't always fix the problem.
 
 First, being able to read the code and build it yourself makes it *possible* to find a bug, but only if you're doing a careful code review.
 Auditing code that someone else has written is notoriously hard and, as the [underhanded C contest](https://www.underhanded-c.org) showed, hiding intentional vulnerabilities in source code is much easier than finding them.
