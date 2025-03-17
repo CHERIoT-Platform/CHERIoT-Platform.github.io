@@ -1,16 +1,10 @@
 ---
 layout: post
-title: MPACT-Cheriot
+title: "MPACT-Cheriot - A Fast and flexible simulator for the CHERIoT architecture"
 date: 2025-03-10
 categories: cheri toolchain
 author: Tor Jeremiassen
 ---
-
-# MPACT-Cheriot
-
-## A fast and flexible simulator for the CHERIoT architecture.
-
-### Tor Jeremiassen, Google LLC.
 
 ## Introduction
 
