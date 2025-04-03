@@ -360,8 +360,8 @@ type.
 
 There are two ISS versions provided. One is a standalone CHERIoT simulator, the
 other is a dynamic library that implements an interface that allows it to be
-imported, instantiated, and used as a CPU in ReNode [^10] system simulations.
-ReNode is a development environment that allows you to run full unmodified
+imported, instantiated, and used as a CPU in Renode [^10] system simulations.
+Renode is a development environment that allows you to run full unmodified
 software on a model of a full system. Applications running on systems are often
 distributed across a number of processors, whether on a single SoC or across
 chip boundaries, and access a number of peripherals and memories across the
@@ -369,7 +369,7 @@ system. Being able to develop, run, and debug the full software pre-silicon on a
 simulated platform brings with it the same benefits as developing software for a
 single core using an ISS in terms of visibility, debuggability, and fan-out.
 
-ReNode provides debugging facilities and visibility at the system level and
+Renode provides debugging facilities and visibility at the system level and
 supports running a GDB server, but of course, only for processors already
 supported by GDB. For new architectures, or newly modified architectures, GDB
 support is often not available. The dynamic-library version of MPACT-Cheriot
@@ -425,7 +425,7 @@ In summary, MPACT-Cheriot is an open-sourced, fast simulator that has excellent
 debug features to support early software development for the new CHERIoT
 architecture. It is based on the MPACT-Sim framework which made it easy to
 develop and modify to track ISA changes as they occurred. It can be used both
-standalone and as part of a ReNode full-system simulation. Its speed and debug
+standalone and as part of a Renode full-system simulation. Its speed and debug
 features have proven invaluable internally: "What was taking hours to debug now
 takes minutes\!".
 
@@ -449,7 +449,7 @@ takes minutes\!".
 
 [^9]: "Protocol Buffers \- Google's data interchange format", [https://github.com/protocolbuffers/protobuf](https://github.com/protocolbuffers/protobuf).
 
-[^10]: "ReNode", [https://renode.io](https://renode.io).
+[^10]: "Renode", [https://renode.io](https://renode.io).
 
 [^11]: "RISC-V Advanced Core Local Interruptor Specification", [https://github.com/riscv/riscv-aclint](https://github.com/riscv/riscv-aclint).
 
