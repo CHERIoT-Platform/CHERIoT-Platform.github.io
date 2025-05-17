@@ -117,6 +117,8 @@ And, of course, the MIPS prototypes have been replaced with RISC-V.
 Finally, you'll note that the 2015 paper is silent on the topic of temporal safety.
 There were a lot of experiments going on for temporal safety but the first one that worked well over large codebases was [Cornucopia, published in 2020](https://www.cl.cam.ac.uk/research/security/ctsrd/pdfs/2020oakland-cornucopia.pdf).
 Wes Filardo (an original and continuing member of the CHERIoT team) drove a lot of this along with the [2024 Cornucopia Reloaded follow-up work to move to a load barrier](https://www.cl.cam.ac.uk/research/security/ctsrd/pdfs/202404asplos-cornucopia-reloaded.pdf).
+This model works on Morello and on the upcoming RISC-V 64-bit CHERI specification.
+
 As often happens with long publication delays in academia, our [2023 CHERIoT paper](https://www.cl.cam.ac.uk/research/security/ctsrd/pdfs/202310ieeemicro-cheriot-uarch.pdf) includes work inspired by this.
 The CHERIoT temporal safety approach replaced the Cornucopia Reloaded MMU-based load barrier with a hardware load filter and built on some other ideas that came from our work to compose CHERI with Arm's memory tagging extensions (MTE).
 These haven't yet been published, but experienced microarchitects estimate that they would get the overhead of temporal safety for big superscalar CHERI implementations to under 2%.
