@@ -11,8 +11,8 @@ author: David Chisnall
 This week, we received an IEEE Security and Privacy Test of Time Award for the 2015 paper [*CHERI: A Hybrid Capability-System Architecture for Scalable Software Compartmentalization*](https://www.cl.cam.ac.uk/research/security/ctsrd/pdfs/201505-oakland2015-cheri-compartmentalization.pdf).
 This seemed like a good opportunity to look at how CHERI has changed from the time the paper was published to today's CHERIoT (I'll leave discussing other CHERI variants to some of the other coauthors - there's a lot of ongoing CHERI work beyond this project!).
 
-For those less familiar with the history, the CHERI project started in 2010 (I joined in 2012) with DARPA asking 'If you could change anything about computing to improve security, what would you do?'.
-CHERI built on experiences with Capsicum and historical capability systems to reimagine memory safety.
+For those less familiar with the history, the CHERI project started in 2010 (I joined in 2012) with the [DARPA CRASH programme](https://www.darpa.mil/research/programs/clean-slate-design-of-resilient-adaptive-secure-hosts) asking 'If you could change anything about computing to improve security, what would you do?'.
+CHERI built on experiences with [Capsicum](https://www.cl.cam.ac.uk/research/security/capsicum/papers/2010usenix-security-capsicum-website.pdf) and historical capability systems to reimagine memory safety.
 
 The CHERIoT project built on this prior work and started at Microsoft in 2019 when we began to think about scaling down some of the server-class ideas that we'd been working on for Azure to microcontrollers.
 We also asked what kind of system we could build if we could *assume* CHERI, and how can we simplify the hardware if we didn't need other protection mechanisms.
@@ -43,8 +43,10 @@ It could even do sub-object collection, so if you allocated an array and kept a 
 
 I was very happy with this model.
 Unfortunately, it turned out to be a terrible idea.
-When Alex Richardson and Jessica Clarke tried to build much more complex programs with it, they discovered that lots of things really want to use pointer to integer conversions for things like trees and hash tables.
+When Alex Richardson and Jessica Clarke tried to build much more complex programs with it, they discovered that [lots of things really want to use pointer to integer conversions for things like trees and hash tables](https://www.cl.cam.ac.uk/techreports/UCAM-CL-TR-949.pdf).
 There were some really nasty corner cases, such as hash tables that 'worked', but ended up putting every object in the first hash bucket, giving truly awful performance.
+It also introduced more subtle bugs in things that used address order for consistent lock-acquisition order.
+These last ones are fundamentally incompatible with copying GC and so it became clear that this was not a model for C/C++ that would be able to compile large codebases without modification.
 
 Alex and Jess fixed that in the compiler, but the core hardware abstractions remained largely unchanged.
 In CHERIoT, we removed the last vestiges of offsets by removing the set-offset instruction, because the extra addition hurt critical path lengths.
@@ -82,6 +84,7 @@ This lowers every pointer to a CHERI capability and was possible only because th
 Back then, I was calling this the 'sandbox ABI' because we couldn't use it for complete programs (Robert Watson convinced me that was a terrible name).
 It wasn't until a few years later that (led by Brooks Davis but with a lot of amazing work from others) we finally had a complete CHERI userspace.
 If you read only one CHERI paper, [the 2019 one describing that system](https://www.cl.cam.ac.uk/research/security/ctsrd/pdfs/201904-asplos-cheriabi.pdf) is probably the one you should read (this one won the ASPLOS Best Paper Award).
+The [2024 IEEE Security & Privacy journal paper](https://www.cl.cam.ac.uk/research/security/ctsrd/pdfs/20240419-ieeesp-cheri-memory-safety.pdf) gives a better high-level overview, but the CheriABI paper and the [extended technical report version](https://www.cl.cam.ac.uk/techreports/UCAM-CL-TR-932.pdf) provide a lot more detail in how CHERI can build a complete solution.
 
 # Some things have changed
 
@@ -104,11 +107,19 @@ This was great for a research prototype because there were always spare bits for
 
 Doubling the size of pointers was a hard sell, quadrupling the size would have been impossible.
 It was also painful for large processors to require 256-bit data paths across the load-store unit and register file.
-It took a while to get it published, I can't remember when we first implemented it, but the [CHERI Concentrate paper](https://www.cl.cam.ac.uk/research/security/ctsrd/pdfs/2019tc-cheri-concentrate.pdf) describes how we shrunk this down to 128 bits, inspired by the [Low-fat pointers work](https://dl.acm.org/doi/10.1145/2508859.2516713).
+It took a while to get it published, but the [CHERI Concentrate paper](https://www.cl.cam.ac.uk/research/security/ctsrd/pdfs/2019tc-cheri-concentrate.pdf) describes how we shrunk this down to 128 bits, inspired by the [Low-fat pointers work](https://dl.acm.org/doi/10.1145/2508859.2516713).
+The first public references to this work are in the [2015 technical report](https://www.cl.cam.ac.uk/techreports/UCAM-CL-TR-876.pdf).
 CHERIoT had to shrink this further and had other microarchitectural constraints for short pipelines, which is why we support two capability formats for different scales of devices.
 
 And, of course, the MIPS prototypes have been replaced with RISC-V.
-64-bit big-endian MIPS was never well supported and RISC-V reached parity quite quickly and provided a better ecosystem for experimentation.
+64-bit big-endian MIPS was never well supported and RISC-V reached parity quite quickly and provided a better ecosystem for experimentation and technology transition.
+
+Finally, you'll note that the 2015 paper is silent on the topic of temporal safety.
+There were a lot of experiments going on for temporal safety but the first one that worked well over large codebases was [Cornucopia, published in 2020](https://www.cl.cam.ac.uk/research/security/ctsrd/pdfs/2020oakland-cornucopia.pdf).
+Wes Filardo (an original and continuing member of the CHERIoT team) drove a lot of this along with the [2024 Cornucopia Reloaded follow-up work to move to a load barrier](https://www.cl.cam.ac.uk/research/security/ctsrd/pdfs/202404asplos-cornucopia-reloaded.pdf).
+As often happens with long publication delays in academia, our [2023 CHERIoT paper](https://www.cl.cam.ac.uk/research/security/ctsrd/pdfs/202310ieeemicro-cheriot-uarch.pdf) includes work inspired by this.
+The CHERIoT temporal safety approach replaced the Cornucopia Reloaded MMU-based load barrier with a hardware load filter and built on some other ideas that came from our work to compose CHERI with Arm's memory tagging extensions (MTE).
+These haven't yet been published, but experienced microarchitects estimate that they would get the overhead of temporal safety for big superscalar CHERI implementations to under 2%.
 
 # CHERIoT adds some more things
 
@@ -124,7 +135,7 @@ In some ways, CHERI was the least ambitious project on that programme because we
 The 2015 paper makes it clear that you can simply opt out of CHERI for some processes (you don't need to recompile the world) and that you can use legacy ABIs in sandboxes with a bit of glue code doing copying.
 This kind of incremental adoption story is really important, but on embedded systems incremental adoption looks quite different.
 Most embedded code has few dependencies from the host environment, which gave us a lot more freedom to build efficient models that scale right down to tiny devices.
-Many of thees would be possible for green-field software on bigger devices, but you can't build those unless CHERI is widely deployed and you can't deploy CHERI widely without CHERI-enabled CPUs running existing software stacks.
+Many of these would be possible for green-field software on bigger devices, but you can't build those unless CHERI is widely deployed and you can't deploy CHERI widely without CHERI-enabled CPUs running existing software stacks.
 
 # We aren't finished yet!
 
