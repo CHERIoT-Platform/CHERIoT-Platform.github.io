@@ -73,7 +73,7 @@ Passing one of these between processes requires passing them over UNIX domain so
 
 On CHERIoT RTOS, if you want to have a message queue that you can safely use between compartments, the type is `struct MessageQueue *__sealed_capability`.
 This looks just like a pointer.
-You can pass it between compartments: You can pass the write end of a message queue to a compartment that you want to be able to send messages, you don't need complex out-of-bound messaging.
+You can pass it between compartments: You can pass the write end of a message queue to a compartment that you want to be able to send messages, you don't need complex out-of-band messaging.
 
 The CHERIoT message queue compartment has no mutable globals.
 This gives **flow isolation** for free.
@@ -106,7 +106,7 @@ These all have a fast path that just requires an atomic operation and slow paths
 
 The scheduler's blocking APIs (wait for timeout, wait for a futex, wait for more than one futex) all take a pointer to a `Timeout` structure.
 This records the amount of time that a thread may spend blocking (along with the amount of time it has spent blocking).
-These are intended to be passed through multiple compartments, so a complex operating that does multiple calls that might block can reuse the timeout pointer from the caller and stop if the timeout is exceeded.
+These are intended to be passed through multiple compartments, so a complex operation that does multiple calls that might block can reuse the timeout pointer from the caller and stop if the timeout is exceeded.
 This makes it easy to build rich APIs that have bounded blocking times.
 You wouldn't build a system like this unless sharing a two-word structure across security boundaries is easy.
 
