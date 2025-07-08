@@ -25,8 +25,8 @@ Each phone has a unique number that identifies it.
 If someone discovers your phone number, perhaps because you gave it to a company and they sold it to marketers, or because someone you know had their address book compromised, then they can call you.
 
 A capability is a token that grants authority and allows you to perform an action if you present the capability.
-The key for your front door is a capability, anyone who holds it can enter your house.
-Your address is an identifier, it is just a label that conveys no authority.
+The key for your front door is a capability: anyone who holds it can enter your house.
+Your address is an identifier: it is just a label that conveys no authority.
 You wouldn't want to build a system where knowing your address is sufficient to be able to enter your house.
 Yet this is exactly how the telephone network works: Someone can make your phone ring just by knowing the number.
 
@@ -48,13 +48,13 @@ You think you are accessing one object, but are actually accessing the wrong one
 
 Similarly, an attacker can just try addresses until they find the correct one.
 Speculative execution attacks make it very quick to probe an address space.
-Simply learning the address of an object is sufficient to be able to forge something that lets you access it, because addresses identifiers that are treated as capabilities.
+Simply learning the address of an object is sufficient to be able to forge something that lets you access it, because addresses identifiers are treated as capabilities.
 
 This is very different in a CHERI system.
 Knowing the address of a piece of memory does not grant you access to that memory.
 You must also hold a valid capability that *authorises access to that region*.
 If you hold a pointer (represented as a CHERI capability) and do some arithmetic that makes its address point to a different object, you will trap when you access it.
-If an attacker guesses the address of an object, that's fine: they still don't hold a capability that lets them authorise it.
+If an attacker guesses the address of an object, that's fine: they still don't hold a capability that authorises access to it.
 
 In CHERIoT, this model is used at all levels of the system.
 On a conventional UNIX-like system, everything that a process does to interact with the outside world happens via *file descriptors*.
@@ -62,12 +62,12 @@ File descriptors start at 0 and are numbered sequentially.
 The first three are standard input, output, and error.
 
 If a part of your program wants to access a file or a network socket, it must know the file descriptor number.
-That number is just an integer that indexes into the table.
-From the kernel's perspective, the thing in the table is a capability (it authorises access to a specific resource) but within your program file descriptor numbers are just integers.
+That number is just an integer that indexes into a table.
+From the kernel's perspective, the thing in the table is a capability (it authorises access to a specific resource), but within your program file descriptor numbers are just integers.
 If a file descriptor is closed and a new one opened, the number is reused.
 Anything that holds the old file descriptor number will now use the wrong file, socket, or whatever ends up in that entry in the file-descriptor table.
 
-In a CHERIoT system, anything like a file descriptor (for example, an endpoint for in a message queue or a network socket) is represented as a *sealed capability*.
+In a CHERIoT system, anything like a file descriptor (for example, an endpoint for a message queue or a network socket) is represented as a *sealed capability*.
 This is a tamper-proof pointer that can be handed around just like any other pointer in your C code, but can be unsealed and used only by a compartment that holds the correct rights.
 If part of a program has a capability to a network socket, no other part of the program can forge a capability that allows access to that socket.
 The only way to confuse two sockets is if you put the pointers to them in some data structure and index them incorrectly.
