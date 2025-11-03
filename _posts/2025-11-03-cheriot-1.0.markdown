@@ -12,7 +12,7 @@ We start with a foundational guarantee of memory safety (the hardware will trap 
 
 This specification defines the ISA, the CHERIoT language extensions, compilation model, relocations, and so on.
 The last change that we made to the ISA was in December 2024, so we are confident that this is a stable release that we can support in hardware for a long time.
-This release was implemented by the [1.0 release of CHERIoT Ibex](https://github.com/microsoft/cheriot-ibex/releases/tag/cheriot_ibex_v1.0) and by [CHERIoT Kudu](https://github.com/microsoft/cheriot-kudu) (which has not yet had an official release).
+This specification was implemented by the [1.0 release of CHERIoT Ibex](https://github.com/microsoft/cheriot-ibex/releases/tag/cheriot_ibex_v1.0) and by [CHERIoT Kudu](https://github.com/microsoft/cheriot-kudu) (which has not yet had an official release).
 These two implementations demonstrate that the ISA scales from three-stage single-issue pipelines to six-stage dual-issue pipelines, roughly the same range of microarchitectures supported by Arm's M profile.
 
 We at SCI have the first of our ICENI chips, which use the CHERIoT Ibex core, on the way back from the fab now and will be scaling up to mass production in the new year.
@@ -24,9 +24,9 @@ This is a release that, both through the open-source CHERIoT Platform project an
 
 RISC-V International is currently standardising a CHERI base for RISC-V (tentatively named Y, alongside the existing I and E bases).
 We aim for this to be a common subset across all CHERI implementations, whether they are microcontroller, application cores, or domain-specific accelerators.
-The exact composition of this base is still under discussion, but we aim for CHERIoT 2.0 to be equivalent to CHERIoT 1.0, but built atop this common base.
+The exact composition of this base is still under discussion, but we aim for CHERIoT 2.0 to be source-compatible with (and with equivalent functionality to) CHERIoT 1.0, but built atop this common base.
 
-On the way to 2.0, we will be separating out the parts that are in the common core from those that are CHERIoT-specific.
+On the way to 2.0, we have been separating out the parts that are in the common core from those that are CHERIoT-specific.
 We also have the `ct.` prefix reserved for the CHERIoT vendor extensions in RISC-V and so will move any instructions that are not direct equivalents of standardised RISC-V instructions into that namespace.
 For compatibility, our toolchains will support both names, but we expect to transition to the RISC-V official names as the RISC-V standardisation process makes progress.
 
@@ -44,6 +44,7 @@ This avoids increasing compartment and context-switch times (which comes from a 
 We have two candidates for alternative bounds encodings, which each have different microarchitectural tradeoffs.
 They are 100% backwards compatible with the software and so we aim to add both to a future version of the specification.
 We have designed our ABI carefully to avoid leaking capability encoding details into the software model, which means that we can support implementers picking any of the three encodings, on the products where each makes sense, along with any vendor-specific variants that they may wish to support.
+Supporting different encodings does not require changes even to core RTOS code and the two proposed modifications do not require toolchain changes either, though vendor extensions may.
 
 We've been exploring for a while the idea of having two integer subregisters for each capability.
 This would give us 30 integer registers or 15 capability registers, which would slightly reduce stack spills.
