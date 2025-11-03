@@ -1,0 +1,73 @@
+---
+layout: post
+title:  "CHERIoT 1.0 Released!"
+date:   2025-11-03
+categories: sail specification release
+author: "David Chisnall"
+---
+
+Today, we [released the 1.0 version of the CHERIoT specification](https://github.com/CHERIoT-Platform/cheriot-sail/releases/tag/v1.0)!
+For those reading about CHERIoT for the first time, it is a hardware-software co-design project that aims to produce secure microcontroller-class systems for connected devices.
+We start with a foundational guarantee of memory safety (the hardware will trap on buffer overflows or use after free errors, even in assembly code) and build rich (and usable) compartmentalisation abstractions on top.
+
+This specification defines the ISA, the CHERIoT language extensions, compilation model, relocations, and so on.
+The last change that we made to the ISA was in December 2024, so we are confident that this is a stable release that we can support in hardware for a long time.
+This release was implemented by the [1.0 release of CHERIoT Ibex](https://github.com/microsoft/cheriot-ibex/releases/tag/cheriot_ibex_v1.0) and by [CHERIoT Kudu](https://github.com/microsoft/cheriot-kudu) (which has not yet had an official release).
+These two implementations demonstrate that the ISA scales from three-stage single-issue pipelines to six-stage dual-issue pipelines, roughly the same range of microarchitectures supported by Arm's M profile.
+
+We at SCI have the first of our ICENI chips, which use the CHERIoT Ibex core, on the way back from the fab now and will be scaling up to mass production in the new year.
+I am not allowed to speak for other folks building CHERIoT silicon, but I expect 2026 to be an exciting year for the CHERIoT project!
+
+This is a release that, both through the open-source CHERIoT Platform project and through partner companies that aim to ship CHERIoT products, we will be supporting for years to come.
+
+# Alignment with the RISC-V Y base
+
+RISC-V International is currently standardising a CHERI base for RISC-V (tentatively named Y, alongside the existing I and E bases).
+We aim for this to be a common subset across all CHERI implementations, whether they are microcontroller, application cores, or domain-specific accelerators.
+The exact composition of this base is still under discussion, but we aim for CHERIoT 2.0 to be equivalent to CHERIoT 1.0, but built atop this common base.
+
+On the way to 2.0, we will be separating out the parts that are in the common core from those that are CHERIoT-specific.
+We also have the `ct.` prefix reserved for the CHERIoT vendor extensions in RISC-V and so will move any instructions that are not direct equivalents of standardised RISC-V instructions into that namespace.
+For compatibility, our toolchains will support both names, but we expect to transition to the RISC-V official names as the RISC-V standardisation process makes progress.
+
+Expect to see some 1.x releases that make changes in things like assembler mnemonics (but not the underlying ISA).
+
+# Future plans beyond 2.0
+
+No ISA specification is ever complete.
+Our 1.0 release is a solid foundation, not an endpoint.
+
+We already have plans to integrate with the [Zfinx and Zdinx extensions](https://docs.riscv.org/reference/isa/unpriv/zfinx.html), which allow 32-bit and 64-bit floating point values to be held in integer registers on RISC-V.
+On CHERIoT, a 64-bit floating-point value could live in a single capability register (as, indeed, it is in the CHERIoT soft-float ABI).
+This avoids increasing compartment and context-switch times (which comes from a larger register file, and are why we used RV32E, not RV32I as our base), while still allowing hardware floating point acceleration.
+
+We have two candidates for alternative bounds encodings, which each have different microarchitectural tradeoffs.
+They are 100% backwards compatible with the software and so we aim to add both to a future version of the specification.
+We have designed our ABI carefully to avoid leaking capability encoding details into the software model, which means that we can support implementers picking any of the three encodings, on the products where each makes sense, along with any vendor-specific variants that they may wish to support.
+
+We've been exploring for a while the idea of having two integer subregisters for each capability.
+This would give us 30 integer registers or 15 capability registers, which would slightly reduce stack spills.
+This involves some complexity in the microarchitecture and in the compiler, so it isn't an automatic win and there's a lot more work to decide whether it's desirable.
+
+The current drafts for the RISC-V official specification provide a thread ID register.
+We've been considering how we could replace our use of the global-pointer register with this, to make it a compartment identifier.
+The specification also reserves loads and stores with the zero base register (which will always trap on a CHERI system) and so we could use these for GP-relative loads and stores.
+
+Similarly, the current draft reserves space for a branch-if-tag-[not-]-set instruction, which would be quite commonly used in our software model.
+The RISC-V code-size extensions have `push` and `pop` / `popret` instructions, which are likely to want some adaptation to be most useful with CHERIoT.
+
+And there are also a lot of interesting ideas in research.
+For example, [BLACKOUT](https://arxiv.org/abs/2504.14654) provided a way of building a data-centric constant-time programming model on top of CHERI.
+There's a bit of work to see how to integrate that with CHERIoT but being able to have a good programmer model for constant-time programming would be worth it for a later release.
+
+There are a lot of possible future directions, and we expect to be adding to the spec for a while.
+Having a solid core means that we can do this without breaking backwards compatibility.
+And, as with everything in CHERIoT today, future additions to the ISA will always be motivated by software requirements and careful consideration of the programmer model and the microarchitecture.
+
+# Sorry for the wait!
+
+This is a slightly embarrassing post to write, because I thought we'd done a 1.0 release several months ago: The ISA has been sufficiently stable for a 1.0 stamp for a while.
+Unfortunately, when we initially thought about it, there was a bug in the Sail to LaTeX converter and so we postponed the release until we could generate a nice specification PDF.
+That bug was fixed quite quickly, but by then I'd forgotten that it had been the release blocker and thought we'd done this release back in the Spring.
+
+Approaching a year without any ISA changes makes me even more confident than I was back in the Spring that this is a release that we can support for the next decade.
