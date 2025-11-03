@@ -27,9 +27,10 @@ CHERIoT extends this with a complete platform providing deterministic use-after-
 
 The CHERIoT project comprises several repositories:
 
- - The  [formal model of the CHERIoT ISA](https://github.com/CHERIoT-Platform/cheriot-sail).
+ - The  [platform specification, including the formal model of the CHERIoT ISA](https://github.com/CHERIoT-Platform/cheriot-sail).
    This is used to build an executable simulator and to prove properties of both the ISA and of implementations.
-   [The current (draft) version of the specification](https://cheriot.org/cheriot-sail/cheriot-architecture.pdf) is built in CI.
+   [The under-development (draft) version of the specification](https://cheriot.org/cheriot-sail/cheriot-architecture.pdf) is built in CI.
+    The [1.0 (current) release of the specification](https://github.com/CHERIoT-Platform/cheriot-sail/releases/download/v1.0/cheriot-architecture-v1.0.pdf) is also available.
  - The [CHERIoT RTOS](https://github.com/CHERIoT-Platform/cheriot-rtos), a clean-slate RTOS designed to take advantage of CHERIoT features.
    This provides the compartment model, a heap that can be safely shared across mutually distrusting compartments, and a host of other features.
  - [CHERIoT LLVM](https://github.com/CHERIoT-Platform/llvm-project) provides the toolchain for building the RTOS and other software that runs atop it.
