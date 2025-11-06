@@ -26,8 +26,8 @@ This represents an unsealed capability.
 
 The `CSeal` instruction (which has different spellings in some CHERI variants) combines two capabilities.
 One is a 'normal' pointer-like capability.
-The other, the sealing key, is one whose address (sometimes referred to as 'value' or 'cursor') does not represent a memory location, but instead represents a value in an abstract space of types and has the permit-seal permission.
-The address of the sealing key is placed into the otype field of the pointer-like capability, giving a *sealed* capability.
+The other, the *sealing key*, has the permit-seal permission and its address (sometimes referred to as 'value' or 'cursor') does not represent a memory location, but instead represents a value in the space of types.
+The result of sealing is a copy of the pointer-like input with its otype field set to the address of the sealing key, making it a *sealed* capability.
 
 You can pass this around just like any other pointer, but you can't use or modify it.
 If you try to use it as the base for loads or stores, it will trap.
@@ -127,8 +127,8 @@ You can create a CHERIoT compartment that has access to a sealed object where an
 The contents of these show up in the audit log.
 
 We use these throughout the system to implement *software* capabilities.
-CHERI (hardware) capabilities are unforgeable (delegable) tokens of authority that authorise access to memory.
-CHERIoT software capabilities are unforgeable (delegable) tokens of authority that authorise some other compartment to perform some action on your behalf.
+CHERI (hardware) capabilities are unforgeable (delegable) tokens of authority to perform some _architectural_ action; they authorize operations carried out on your behalf by the hardware.
+CHERIoT software capabilities are unforgeable (delegable) tokens of authority to perform some _software_ action; they authorise operations carried out on your behalf by some other compartment.
 
 The first use of these most programmers will make is to allocate memory.
 If you call `malloc`, this is a thin compatibility wrapper around `heap_allocate`, which requires an allocator (software) capability as an argument.
@@ -141,23 +141,24 @@ These static capabilities can be inspected with [CHERIoT Audit](/rtos/firmware/a
 
 # Sealed handles give trivial flow isolation
 
-Sealed capabilities are passed out and back as opaque values and can be unsealed without any global state beyond the sealing key.
+Sealed capabilities are passed out and back as opaque values and can be unsealed without any global state beyond a constant (un)sealing key.
 A lot of compartments that use them have no global mutable state.
 If you pass a sealed capability to a TLS session into the TLS compartment, that compartment can unseal it and then see the state of your TLS session.
 
-While operating on your TLS session, that compartment does not hold any capabilities to other TLS sessions.
+The thread operating on _your_ TLS session, while within the TLS compartment, does not gain access to capabilities to other TLS sessions.
 If an attacker gains arbitrary code execution in the TLS compartment while operating on one TLS flow, that doesn't give them the ability to attack another one.
 
 The same applies to much simpler compartments.
 The message-queue compartment, which provides secure message queues and streams between compartments, has the same property.
 The only state that it operates over is reached via the sealed queue pointer or one of the arguments.
-If you compromise this compartment, you can tamper with a queue that you hold an endpoint handle for, but not any other queue.
+If you dynamically compromise this compartment, you can tamper with a queue that you hold an endpoint handle for, but not any other queue.
 
 # Sentries build on sealing
 
 CHERI also has a notion of a *sealed entry* (sentry) capability.
 These are sealed capabilities with a special otype that allows them to be used as jump targets.
-When you jump to a sentry, it is implicitly unsealed.
+When you jump to a sentry, it is implicitly unsealed and installed as the program counter.
+PC-relative loads then let the jumped-to code retrieve capabilities inaccessible to the code that held the sentry.
 
 Morello had several variants of sentries, including some designed for descriptors where the sentry was actually a pointer to a pair of a code and data capability.
 The jump would load the data capability and branch to the code capability.
@@ -169,7 +170,9 @@ The use of a sentry otype is an *attestation* from the loader that this really i
 # CHERIoT provides rich sentries
 
 CHERIoT uses sentries to control interrupts.
-We have sentry variants that explicitly enable or disable interrupts when you jump to them.
+Rather than the usual paradigm of software explicitly managing the interrupt enable status bit, we have sentry variants that explicitly enable or disable interrupts when you jump to them.
+This encourages a more structured style of code for interrupt management.
+Moreover, the interrupt status of a function is visible in the audit report, so it is possible to see which compartments are able to call which interrupt-disabling functions.
 This is one of the ways in which CHERIoT is very much designed for embedded systems.
 Implementing this feature is moderately easy on in-order pipelines, but would be much harder on out-of-order machines.
 This is also one of the strengths of RISC-V: we can add extensions that are desirable in part of the hardware design space, but not everywhere.
