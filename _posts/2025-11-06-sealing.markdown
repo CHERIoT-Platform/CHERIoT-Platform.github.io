@@ -69,11 +69,12 @@ The sentry mechanism (discussed later) is a variant of this idea.
 
 Morello had a 15-bit object-type field, which is sufficient for a lot of things.
 When we scaled CHERI down to 32-bit systems for CHERIoT, we ended up with only three bits of space.
-Of these, the zero value means not-sealed, so there were only seven values available.
+Of these, the zero value means not-sealed, so there were only seven bit patterns available.
 Even simple embedded software typically has more than seven types.
 CHERIoT systems usually have more than seven compartments, so seven types isn't even enough for one type per compartment (and some compartments wish to offer more than one sealed type).
+Because they are (mostly) used for different purposes, we differentiated executable and data capabilities, so 3 bits actually gives 14 sealing types, seven for data and seven for sentries (see later).
 
-The *virtualised sealing* mechanism was designed to work around this limitation.
+The *virtualised sealing* mechanism was designed to work around this shortage of sealing types.
 We reserve two of the object types for objects that are instances of a structure with the following layout:
 
 ```c
@@ -90,13 +91,11 @@ struct SealedObject
 
 The first 32-bit word is the type, followed by 32 bits of padding, and then the real object.
 
-The hardware only uses values less than 16 for object types.
-Executable and data capabilities have different hardware sealing namespaces, so 3 bits actually gives 14 sealing types, seven for data and seven for sentries (see later).
-
-Our virtualised mechanism takes advantage of the fact that we can represent a lot more values in the address field of a capability than in the otype field.
+Our virtualised mechanism takes advantage of the fact that we can represent a lot more values in the address field (32 bits) of a capability than in the otype field (three bits).
 Any address in a permit-seal or permit-unseal capability that cannot fit into the otype field is available to authorise sealing or unsealing with the virtualised mechanism.
-This gives us almost four billion types that we can represent with the virtualised mechanism, at the expense of being able to seal only complete objects.
+This gives us almost four billion types that we can represent with the virtualised mechanism, at the expense of being able to seal only complete objects and of each object having a single type.
 This is fine for most use cases, though language VMs on bigger systems would benefit from at least a few hardware otypes.
+We also reserve two data otypes for future use, so have some flexibility going forward.
 
 The CHERIoT `token_unseal` function unseals the object using the hardware sealing key and then compares the virtual otype in the header to the type of the permit-unseal capability passed as the key.
 If they match, it returns an unsealed capability to the object without the header, so the caller doesn't ever have access to the header.
@@ -115,6 +114,7 @@ The same thing happens for message queues, TLS sessions, and so on.
 In a conventional monolithic kernel, these would all be handles or file descriptors looked up in some table in the kernel.
 In a microkernel, they'd either be indexed per caller, or managed via some handle-manager service.
 In CHERIoT, these are simply opaque pointers.
+If these are allocated from the heap, they also benefit from the temporal safety mechanisms: Freeing the object that a handle refers to invalidates all handles, without requiring any further synchronisation.
 
 Exactly the same abstractions that you use for data hiding in good API design work between trust domains, with a little bit of hardware help.
 This is great for programmers because you can easily *retrofit* a security boundary.
@@ -160,12 +160,11 @@ These are sealed capabilities with a special otype that allows them to be used a
 When you jump to a sentry, it is implicitly unsealed and installed as the program counter.
 PC-relative loads then let the jumped-to code retrieve capabilities inaccessible to the code that held the sentry.
 
+In CHERIoT RTOS, all library functions, including the switcher (which handles cross-compartment calls) are provided as sentries.
+
 Morello had several variants of sentries, including some designed for descriptors where the sentry was actually a pointer to a pair of a code and data capability.
 The jump would load the data capability and branch to the code capability.
 This underlying mechanism is very flexible and there is a lot more research to be done on how it can be used in the future on big systems.
-
-In CHERIoT RTOS, all library functions, including the switcher (which handles cross-compartment calls) are provided as sentries.
-The use of a sentry otype is an *attestation* from the loader that this really is a valid jump target, which code can check.
 
 # CHERIoT provides rich sentries
 
@@ -186,8 +185,8 @@ Credit to folks at the Microsoft Security Response Center for recommending this 
 When you jump to a forward-edge sentry with a jump-and-link instruction, the link register is a return sentry that captures the previous interrupt state (enabled or disabled).
 This means that, at least for leaf functions, we can enforce structured programming for control over interrupt state.
 
-The forward-edge sentries are an attestation from the RTOS to the running software that this is a valid function pointer.
-The backwards-edge sentries are an attestation from the hardware that this is the result of executing a jump-and-link instruction.
+The forward-edge sentries are an *attestation* from the RTOS to the running software that this is a valid function pointer.
+The backwards-edge sentries are an *attestation* from the hardware that this is the result of executing a jump-and-link instruction.
 
 # CHERIoT uses sealing inside the RTOS
 
