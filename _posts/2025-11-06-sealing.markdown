@@ -1,0 +1,202 @@
+---
+layout: post
+title:  "How CHERIoT uses Sealing"
+date:   2025-11-06
+categories: rtos sealing
+author: "David Chisnall"
+---
+
+Sealing is one of the oldest parts of CHERI and one of the most powerful.
+When I joined the project in 2012 it was integral to the early prototype call-gate mechanism.
+You can find this version in [our 2014 tech report](https://www.cl.cam.ac.uk/techreports/UCAM-CL-TR-850.pdf).
+It included `CSealCode` and `CSealData` instructions that assembled a pair of capabilities that could be used with the `CCall` instruction to perform a cross-compartment call.
+By [our IEEE Security and Privacy 2015 paper](https://www.cl.cam.ac.uk/research/security/ctsrd/pdfs/201505-oakland2015-cheri-compartmentalization.pdf), this had been replaced with the modern sealing mechanism that we use today.
+
+# A quick intro to sealing
+
+CHERI capabilities are most commonly used as pointers (they can also be used for very coarse-grained sandboxing, with a model similar to WebAssembly).
+Each capability is an address plus some metadata, protected by *guarded manipulation*.
+The CPU enforces properties on how capabilities can be manipulated (for example, their bounds can be shrunk, but not expanded).
+Importantly, it also checks the metadata before the capability can be used for any operation.
+For example, if you use a capability as the base for a load instruction then the core will check that the entire width of the load is within the bounds and that the capability has load permission.
+
+The metadata for a CHERI capability has an *object type* (otype) field.
+If you're just using capabilities to represent pointers in unmodified C/C++ code, then you will only ever see capabilities with zero in their otype field.
+This represents an unsealed capability.
+
+The `CSeal` instruction (which has different spellings in some CHERI variants) combines two capabilities.
+One is a 'normal' pointer-like capability.
+The other, the sealing key, is one whose address (sometimes referred to as 'value' or 'cursor') does not represent a memory location, but instead represents a value in an abstract space of types and has the permit-seal permission.
+The address of the sealing key is placed into the otype field of the pointer-like capability, giving a *sealed* capability.
+
+You can pass this around just like any other pointer, but you can't use or modify it.
+If you try to use it as the base for loads or stores, it will trap.
+If you try to modify it (the address or the metadata), you will get an untagged (invalid) capability.
+
+If you use that capability as one operand to `CUnseal` and provide an *unsealing key* (a capability with permit-unseal permission) that has the address from the sealed capability's otype, you get back the original pointer-like capability.
+This lets you pass untrusted code a pointer to something that they can pass back but can't tamper with.
+
+# Sealing gives type safety
+
+The object type in a CHERI capability doesn't necessarily have to have a 1:1 mapping to a language-level type.
+It's quite common for a set of types to have some kind of internal type discriminator.
+For example, in our [ASPLOS 2017 CHERI JNI paper](https://www.cl.cam.ac.uk/research/security/ctsrd/pdfs/201704-asplos-cherijni.pdf), we used three otypes for everything passed from the JVM to native code.
+One each for field-ID and method-ID structures, and one for all Java objects.
+Each Java object starts with a pointer to its class, so we didn't need one otype for each Java class type, just one for all Java objects.
+The virtualised sealing mechanism in CHERIoT uses this same approach to multiplex a huge number of possible object types onto two hardware otypes (one for statically allocated objects and one for dynamic, so the memory allocator is not in the TCB for statically allocated sealed objects).
+More on this later.
+
+If you couple a sealing key type with a language-level type (or family of self-disambiguating types), then you can build type safety that works in the presence of an attacker.
+It's common in C/C++ to expose an *opaque type* at API boundaries.
+This is usually implemented as a pointer to forward-declared structure type.
+C and C++ will not let you dereference this pointer unless you cast it to another type.
+CHERI sealing lets you enforce the no-dereference rule, even if malicious code does cast it to some other type.
+This means that you can hand sealed capabilities to other compartments and they must treat them as opaque types.
+When you get them back, you have a lightweight check that they really are the type that you expect.
+
+After the 2015 paper, we separated the permit-seal and permit-unseal permissions.
+In most CHERIoT use cases, the entity that can seal and unseal pointers with a particular otype is the same.
+This isn't universal.
+C++ provided one of our original use cases for separating them.
+If you seal C++ vtables with a well-known otype, and make the permit-unseal capability for it available anywhere, then you can have a C++ ABI where only the loader can forge vtables.
+This makes code reuse attacks harder.
+
+There are other situations where an object type is used for *integrity* but not *confidentiality*.
+It is an attestation that some software trusted to seal with a particular otype has done so, even if anyone is then able to unseal the result.
+The sentry mechanism (discussed later) is a variant of this idea.
+
+# Virtualised sealing shares hardware object types
+
+Morello had a 15-bit object-type field, which is sufficient for a lot of things.
+When we scaled CHERI down to 32-bit systems for CHERIoT, we ended up with only three bits of space.
+Of these, the zero value means not-sealed, so there were only seven values available.
+Even simple embedded software typically has more than seven types.
+CHERIoT systems usually have more than seven compartments, so seven types isn't even enough for one type per compartment (and some compartments wish to offer more than one sealed type).
+
+The *virtualised sealing* mechanism was designed to work around this limitation.
+We reserve two of the object types for objects that are instances of a structure with the following layout:
+
+```c
+struct SealedObject
+{
+    /// The sealing type for this object.
+    uint32_t type;
+    /// Padding for alignment
+    uint32_t padding;
+    /// The real data for this.
+    char data[];
+};
+```
+
+The first 32-bit word is the type, followed by 32 bits of padding, and then the real object.
+
+The hardware only uses values less than 16 for object types.
+Executable and data capabilities have different hardware sealing namespaces, so 3 bits actually gives 14 sealing types, seven for data and seven for sentries (see later).
+
+Our virtualised mechanism takes advantage of the fact that we can represent a lot more values in the address field of a capability than in the otype field.
+Any address in a permit-seal or permit-unseal capability that cannot fit into the otype field is available to authorise sealing or unsealing with the virtualised mechanism.
+This gives us almost four billion types that we can represent with the virtualised mechanism, at the expense of being able to seal only complete objects.
+This is fine for most use cases, though language VMs on bigger systems would benefit from at least a few hardware otypes.
+
+The CHERIoT `token_unseal` function unseals the object using the hardware sealing key and then compares the virtual otype in the header to the type of the permit-unseal capability passed as the key.
+If they match, it returns an unsealed capability to the object without the header, so the caller doesn't ever have access to the header.
+
+Sealed pointers using the software sealing mechanism always point to the end of the header.
+The header must be strongly aligned, which means that the low three bits are unused.
+We use these to implement three *software permissions*.
+As with the CHERI permissions, these can be cleared but not set.
+
+# Type safety gives easy-to-use handles
+
+A lot of CHERIoT compartments use type-safe pointers as handles.
+For example, if you open a socket, you get back a sealed capability to that socket's state.
+The same thing happens for message queues, TLS sessions, and so on.
+
+In a conventional monolithic kernel, these would all be handles or file descriptors looked up in some table in the kernel.
+In a microkernel, they'd either be indexed per caller, or managed via some handle-manager service.
+In CHERIoT, these are simply opaque pointers.
+
+Exactly the same abstractions that you use for data hiding in good API design work between trust domains, with a little bit of hardware help.
+This is great for programmers because you can easily *retrofit* a security boundary.
+If you have built an API around exposing opaque types, turning it into a robust security boundary simply means doing a few checks on the public APIs.
+
+# Type safety gives static software-defined capabilities
+
+The same sealing mechanism that provides type safety for dynamic allocations also works for static objects.
+You can create a CHERIoT compartment that has access to a sealed object where another compartment owns the sealing key.
+The contents of these show up in the audit log.
+
+We use these throughout the system to implement *software* capabilities.
+CHERI (hardware) capabilities are unforgeable (delegable) tokens of authority that authorise access to memory.
+CHERIoT software capabilities are unforgeable (delegable) tokens of authority that authorise some other compartment to perform some action on your behalf.
+
+The first use of these most programmers will make is to allocate memory.
+If you call `malloc`, this is a thin compatibility wrapper around `heap_allocate`, which requires an allocator (software) capability as an argument.
+The allocator capability is a sealed object that contains a quota.
+It authorises you to allocate memory until your quota is exhausted.
+It also authorises you to free objects that were allocated from your quota and reclaim the quota.
+Similarly, when you create a connected TCP socket, you pass a capability that authorises you to connect to a specific host and port.
+
+These static capabilities can be inspected with [CHERIoT Audit](/rtos/firmware/auditing/2024/03/01/cheriot-audit.html) so you can write policies that say things like 'these four compartments, between them, can't allocate more than 16 KiB of RAM' or 'this compartment may connect to my cloud back end, but nowhere else'.
+
+# Sealed handles give trivial flow isolation
+
+Sealed capabilities are passed out and back as opaque values and can be unsealed without any global state beyond the sealing key.
+A lot of compartments that use them have no global mutable state.
+If you pass a sealed capability to a TLS session into the TLS compartment, that compartment can unseal it and then see the state of your TLS session.
+
+While operating on your TLS session, that compartment does not hold any capabilities to other TLS sessions.
+If an attacker gains arbitrary code execution in the TLS compartment while operating on one TLS flow, that doesn't give them the ability to attack another one.
+
+The same applies to much simpler compartments.
+The message-queue compartment, which provides secure message queues and streams between compartments, has the same property.
+The only state that it operates over is reached via the sealed queue pointer or one of the arguments.
+If you compromise this compartment, you can tamper with a queue that you hold an endpoint handle for, but not any other queue.
+
+# Sentries build on sealing
+
+CHERI also has a notion of a *sealed entry* (sentry) capability.
+These are sealed capabilities with a special otype that allows them to be used as jump targets.
+When you jump to a sentry, it is implicitly unsealed.
+
+Morello had several variants of sentries, including some designed for descriptors where the sentry was actually a pointer to a pair of a code and data capability.
+The jump would load the data capability and branch to the code capability.
+This underlying mechanism is very flexible and there is a lot more research to be done on how it can be used in the future on big systems.
+
+In CHERIoT RTOS, all library functions, including the switcher (which handles cross-compartment calls) are provided as sentries.
+The use of a sentry otype is an *attestation* from the loader that this really is a valid jump target, which code can check.
+
+# CHERIoT provides rich sentries
+
+CHERIoT uses sentries to control interrupts.
+We have sentry variants that explicitly enable or disable interrupts when you jump to them.
+This is one of the ways in which CHERIoT is very much designed for embedded systems.
+Implementing this feature is moderately easy on in-order pipelines, but would be much harder on out-of-order machines.
+This is also one of the strengths of RISC-V: we can add extensions that are desirable in part of the hardware design space, but not everywhere.
+
+CHERIoT also differentiates forward and backwards-edge sentries.
+Function pointers and return addresses use different otypes.
+This means that you cannot trivially replace a return address on the stack with a function pointer for control-flow hijacking.
+This kind of attack is hard on a CHERI system anyway, but this provides some defence in depth.
+Credit to folks at the Microsoft Security Response Center for recommending this and to Murali Vijayaraghavan at Google for coming up with a way of adding it without invasive changes to the ISA.
+
+When you jump to a forward-edge sentry with a jump-and-link instruction, the link register is a return sentry that captures the previous interrupt state (enabled or disabled).
+This means that, at least for leaf functions, we can enforce structured programming for control over interrupt state.
+
+The forward-edge sentries are an attestation from the RTOS to the running software that this is a valid function pointer.
+The backwards-edge sentries are an attestation from the hardware that this is the result of executing a jump-and-link instruction.
+
+# CHERIoT uses sealing inside the RTOS
+
+In addition to the otypes exposed directly to programmers, the RTOS reserves two for internal use.
+When you do a cross-compartment call, the compiler will insert a call to the switcher (via the switcher sentry).
+The function pointer for such a call is a sealed *data* capability to the target compartment's export table.
+The base of this will point to the program counter and global pointer register values for the target.
+The address will point to the metadata describing this entry point.
+The switcher unseals this and so knows that this really is a cross-compartment entry point provided by the loader.
+
+When the switcher takes an interrupt, it will spill the register file and pass the scheduler a sealed capability to the register-save area.
+The scheduler then returns a sealed capability of the same type and the switcher restores the register state from there.
+This ensures that the scheduler never sees the state of interrupted threads, it has only opaque tokens allowing it to choose the next thread to run.
+
+Hopefully this short guided tour has given you some idea of both how powerful a mechanism sealing is, and how pervasive it is in the CHERIoT platform.
