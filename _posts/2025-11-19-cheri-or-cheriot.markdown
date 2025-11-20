@@ -7,17 +7,17 @@ author: "David Chisnall"
 ---
 
 Recently, a few people have asked me 'should we do CHERI or CHERIoT?'
-I hadn't previously written an answer to this because the question doesn't make sense: it's like asking 'should we do x86 page tables or MMUs?'
+I hadn't previously written an answer to this because the question doesn't make sense: it's like asking 'should we do MMUs or x86 page tables?'
 Since it's been asked several times, I think it's worth taking some time to explain *why* the question doesn't make sense.
 
 CHERI is an abstract architecture
 ---------------------------------
 
-CHERI is a set of ISA extensions that define a capability model for accessing memory within an address space.
-There are a *lot* of CHERI variants.
+CHERI is a conceptual extension to conventional computing architectures define a *capability model* for accessing memory within an address space.
+There are a *lot* of concrete instantiations of this conceptual model.
 The [original CHERI research was done on a 64-bit MIPS variant.](https://www.cl.cam.ac.uk/research/security/ctsrd/pdfs/201406-isca2014-cheri.pdf)
 [Arm Morello extended ARMv8 with CHERI extensions](https://www.arm.com/architecture/cpu/morello).
-The University of Cambridge [CHERI ISA v9 Technical Report](https://www.cl.cam.ac.uk/techreports/UCAM-CL-TR-987.pdf) contains x86 and RISC-V CHERI adaptations.
+The University of Cambridge [CHERI ISA v9 Technical Report](https://www.cl.cam.ac.uk/techreports/UCAM-CL-TR-987.pdf) contains a RISC-V CHERI adaptations and even a sketch of CHERI for x86.
 And there is an ongoing effort to standardise [RISC-V CHERI base architectures](https://github.com/riscv/riscv-cheri).
 
 These all provide the same core set of features.
@@ -89,7 +89,7 @@ We check whether capabilities are valid when you load them.
 Most pointers are used more than once, so this is more efficient than checking on every use (as an MTE system must do), but does not scale as well to large multicore systems or complex memory hierarchies.
 You would not want to build a temporal-safety system like ours for a large server system, for example.
 
-CHERIoT also uses sentries for interrupt control.
+CHERIoT also extends CHERI's sealed function pointer ("sentry") mechanism for interrupt control.
 This has some enormous benefits for the programmer model.
 It is quite easy to implement on microcontroller-class systems, even dual-issue designs such as CHERIoT-Kudu.
 It would be very hard to scale to big out-of-order cores.
@@ -113,7 +113,7 @@ So when should I use CHERIoT vs some other CHERI?
 -------------------------------------------------
 
 If you are looking for a microcontroller-class system, CHERIoT is probably the right answer.
-It is co-designed with a compartmentalisation model, includes a rich set of software abstractions, and provides temporal safety as a baseline feature.
+It is co-designed with a compartmentalisation model and a rich set of software abstractions (implemented in CHERIoT RTOS), and provides temporal safety as a baseline feature.
 It is a mature and stable target, supported by multiple organisations.
 
 If you are looking for an application core, CHERIoT is not for you.
