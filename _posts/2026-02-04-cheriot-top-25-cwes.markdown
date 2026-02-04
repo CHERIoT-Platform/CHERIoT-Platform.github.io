@@ -60,8 +60,7 @@ Did I mention that buffer overflows are a recurring theme on this list?
 Position 16 ([CWE-122](https://cwe.mitre.org/data/definitions/122.html)) is yet another buffer overflow, this time on the heap.
 One more that any CHERI platform deterministically mitigates.
 
-Positions 19–21, sadly, are not mitigated by CHERI.
-These all relate to incorrect access control at the application layer.
+Positions 19–21 all relate to incorrect access control at the application layer and, sadly, are not mitigated by CHERI.
 Position 24 is similar.
 
 In between these, we have another web app problem ([CWE-918](https://cwe.mitre.org/data/definitions/918.html), server-side request forgery) and another command injection ([CWE-77](https://cwe.mitre.org/data/definitions/77.html)).
