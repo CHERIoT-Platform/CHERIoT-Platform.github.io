@@ -270,7 +270,7 @@ This was a valuable result proving the usefulness of the approach not only for g
 
 To evaluate scalability, I measured proof time for a representative property across paths of varying length through the unsealer. The results are summarised in the graph below:
 
-![Timing Graph for Branch Properties](image.png)
+![Timing Graph for Branch Properties](/images/2026-02-22-formal-verification-timing-graph.png)
 
 The x-axis shows the number of cycles in the encoded execution path; the y-axis shows proof time in seconds.
 
