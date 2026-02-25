@@ -40,7 +40,7 @@ Initial porting
 
 As is usually the case for CHERIoT, porting the C implementations of ML-KEM and ML-DSA required no code changes.
 I worked with upstream to slightly simplify the platform-integration layer, so we just provide a single header describing the port.
-For example, the [port heaer for ML-DSA](https://github.com/CHERIoT-Platform/cheriot-pqc/blob/main/include/mldsa_native_config.h) configures the build to produce ML-DSA44 support, defines a custom function for zeroing memory and getting entropy, and adds the `__cheriot_libcall` attribute to the all exported APIs (so we can build them as shared libraries, rather than embedded in a single compartment).
+For example, the [port header for ML-DSA](https://github.com/CHERIoT-Platform/cheriot-pqc/blob/main/include/mldsa_native_config.h) configures the build to produce ML-DSA44 support, defines a custom function for zeroing memory and getting entropy, and adds the `__cheriot_libcall` attribute to the all exported APIs (so we can build them as shared libraries, rather than embedded in a single compartment).
 The [file for ML-KEM](https://github.com/CHERIoT-Platform/cheriot-pqc/blob/main/include/mlkem_native_config.h) is almost identical.
 
 With these defined, it is possible to build both libraries as CHERIoT shared libraries.
