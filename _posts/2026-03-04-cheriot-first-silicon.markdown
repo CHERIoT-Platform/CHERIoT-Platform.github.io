@@ -25,5 +25,5 @@ Anything that runs on the software simulators should just work.
 We'll be showing the chips at [Embedded World (Stand 4A - 131)](https://www.embedded-world.de/en) next week and at [CHERI Blossoms](https://cheri-alliance.org/events/cheri-blossoms-conference-2026/) a couple of weeks later.
 From tomorrow, one will also be on display in the CHERI 15th anniversary exhibit in the Cambridge Computer Laboratory.
 
-Aside: The [Iceni tribe](https://www.mouser.co.uk/new/newae-technology/newae-sonata-one-dev-board) were one of the pre-Roman tribes in Britain and are famous for their chariots (though more due to [this statue](https://en.wikipedia.org/wiki/Boadicea_and_Her_Daughters) than historical fact).
+Aside: The [Iceni tribe](https://en.wikipedia.org/wiki/Iceni) were one of the pre-Roman tribes in Britain and are famous for their chariots (though more due to [this statue](https://en.wikipedia.org/wiki/Boadicea_and_Her_Daughters) than historical fact).
 I am only partially to blame for the bad puns in the naming.
