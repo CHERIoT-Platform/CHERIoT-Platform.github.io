@@ -1,0 +1,691 @@
+---
+layout: post
+title: "Introducing Bitpacks"
+date: 2026-05-06
+categories: rtos programming
+author: Nathaniel Wesley Filardo
+---
+
+<script src="https://cdn.jsdelivr.net/npm/wavedrom@3.6.1/wavedrom.unpkg.min.js"></script>
+<script>window.onload = function() { wavedrom.processAll(); };</script>
+
+# Motivation
+
+C and C++ are low-level languages,
+especially well suited for working with hardware and in performance-sensitive data processing applications,
+so it makes sense that they lack convenient, portable mechanism for working with bit-packed structures,
+as often found in hardware memory-mapped I/O (MMIO) registers, network packets, and data serialization formats.
+The primary, syntactic mechanism that these languages do offer for sub-word field management is called "bit-fields",
+a provision to specify, in C++ jargon, the bit width of of a data member with integral or enumeration type.
+Concretely, one writes something like
+
+```c++
+struct MyFields
+{
+	unsigned int enable : 1;
+	enum MyEnum reference : 2;
+	unsigned int bias : 8;
+};
+```
+
+Unfortunately, the in-memory representation is almost completely unspecified by the language standards.
+C++23 (well, N4928) says:
+
+> Allocation of bit-fields within a class object is implementation defined.
+> Alignment of bit-fields is implementation defined.
+> Bit-fields are packed into some addressible allocation unit.
+>
+> [Note 1: Bit-fields straddle allocation units on some machines and not on others.
+> Bit-fields are assigned right-to-left on some machines, left-to-right on others. -- end note]
+
+While there is some provision for forcing alignments of, and controlling padding around, bit-fields,
+the implementation-defined nature makes even this challenging to actually understand and use.
+
+Moreover, bit fields are very much second class citizens:
+
+* they may not have their address taken
+  (so there are no pointers to bit-fields; what would be the type of such a thing?);
+
+* references to bit-fields must be `const`
+  (allowing implementations to quietly convert the reference to one of the bit-field's underlying type);
+
+* because bit-fields exist within aggregate structures that are not themselves numeric types,
+  converting between a bit-field aggregate and a numeric representation can be particularly troublesome,
+  especially in `constexpr` contexts where `reinterpret_cast`-s are forbidden.
+
+As a result, implementations in practice tend to eschew language bit-fields
+in favor of explicit bit-wise operations on numerically-typed words.
+They may even go so far as to eschew C/C++ aggregates completely and view entire MMIO regions
+as simply arrays of `uint32_t`-s,
+with information about the word and sub-word fields' layout
+conveyed "out of band" via, for example, preprocessor `#define`-s.
+
+Given the near ubiquity of dealing with bit-packed structures in embedded contexts, we wanted something better.
+Thus, on an experimental basis, we have introduced
+["bitpacks"](https://github.com/CHERIoT-Platform/cheriot-rtos/pull/558)
+to the CHERIoT-RTOS programming framework.
+Bitpacks are, at their core, simply machinery and syntax wrapping bitwise operators (shift, complement, AND, OR)
+on an underlying value of integral type (say, `uint32_t`),
+making it much more pleasant to view (and write code that views) that underlying value as containing sub-fields.
+
+The remainder of this post gives examples of that machinery
+(and of different ways of thinking about, naming, and typing sub-fields)
+built around a simple, fictitious, but representative, MMIO device.
+
+# A Simple, Fictitious MMIO Device
+
+Imagine a simple peripheral that generates data and has some configuration knobs about how it does so,
+something like a very rough sketch of an analog-to-digital converter.
+Let's say that our device has
+
+* a 32-bit control register with...
+
+  * a control bit that enables or disables the device's operation,
+    which must be disabled to configure the peripheral.
+    The mnemonics for this field's values are `NoGo` and `Go`.
+
+  * a status bit that indicates whether the device is enabled and active.
+    The mnemonics for this field's values are `Off` and `Running`.
+
+  * a choice of "reference", with one internal and two external sources, creatively named "A" and "B",
+    giving us an enumeration with mnemonics `Internal`, `ExternalA`, and `ExternalB`.
+
+  * an 8-bit "bias" value.
+    This field is more numeric than an enumeration, so has no associated mnemonics.
+
+* a 32-bit data register that can be read once the device is active.
+
+Graphically, we might render that MMIO layout something like this:
+<script type="WaveDrom">
+{reg: [
+  { name: 'Enable',    bits: 1 },
+  { name: 'Active',    bits: 1 },
+  {                    bits: 6 },
+  { name: 'Reference', bits: 2 },
+  {                    bits: 6 },
+  { name: 'Bias',      bits: 8 },
+  {                    bits: 8 },
+  { name: 'Data',      bits: 32}
+], config: {hspace: 900, lanes: 4, hflip: true}}
+</script>
+
+# Code Without Bitpacks
+
+## An Array of `uint32_t` Is All You Need?
+
+A minimal, easily generated software description of such a MMIO device might look like this:
+
+```c++
+#define MYDEVICE_OFFSET32_CONTROL 0
+
+#define MYDEVICE_CONTROL_ENABLE_SHIFT 0
+#define MYDEVICE_CONTROL_ENABLE_MASK 0x1
+#define MYDEVICE_CONTROL_ENABLE_V_NOGO 0x0
+#define MYDEVICE_CONTROL_ENABLE_V_GO 0x1
+
+#define MYDEVICE_CONTROL_ACTIVE_SHIFT 1
+#define MYDEVICE_CONTROL_ACTIVE_MASK 0x2
+#define MYDEVICE_CONTROL_ACTIVE_V_OFF 0x0
+#define MYDEVICE_CONTROL_ACTIVE_V_RUNNING 0x1
+
+#define MYDEVICE_CONTROL_REFERENCE_SHIFT 8
+#define MYDEVICE_CONTROL_REFERENCE_MASK 0x300
+#define MYDEVICE_CONTROL_REFERENCE_V_INTERNAL 0x0
+#define MYDEVICE_CONTROL_REFERENCE_V_EXTERNAL_A 0x1
+#define MYDEVICE_CONTROL_REFERENCE_V_EXTERNAL_B 0x3
+
+#define MYDEVICE_CONTROL_BIAS_SHIFT 16
+#define MYDEVICE_CONTROL_BIAS_MASK 0xFF0000
+
+#define MYDEVICE_OFFSET32_DATA 1
+```
+
+This gives
+
+* each register's offset, in terms of 32 bit words,
+
+* the shift to reach the least significant bit of each field,
+
+* the (shifted, in-situ) mask of each field, and
+
+* an enumeration of values for enumeration-typed fields.
+
+An example function using such a definition to write code to configure the device,
+wait for it to become active,
+and then returning the first word of data could look like this,
+taking a pointer to the device's MMIO region's base:
+
+```c++
+uint32_t test(volatile uint32_t *device)
+{
+	// set device.control's enable field to NOGO
+	device[MYDEVICE_OFFSET32_CONTROL] =
+	  (device[MYDEVICE_OFFSET32_CONTROL] & ~MYDEVICE_CONTROL_ENABLE_MASK) |
+	  (MYDEVICE_CONTROL_ENABLE_V_NOGO << MYDEVICE_CONTROL_ENABLE_SHIFT);
+
+	/*
+	 * Set device.control's reference field to EXTERNAL_A value and set bias to
+	 * 0x7f at the same time.  Leave the enable field unchanged.
+	 */
+	device[MYDEVICE_OFFSET32_CONTROL] =
+	  (device[MYDEVICE_OFFSET32_CONTROL] &
+	   ~(MYDEVICE_CONTROL_REFERENCE_MASK | MYDEVICE_CONTROL_BIAS_MASK)) |
+	  (MYDEVICE_CONTROL_REFERENCE_V_EXTERNAL_A
+	   << MYDEVICE_CONTROL_REFERENCE_SHIFT) |
+	  (0x7f << MYDEVICE_CONTROL_BIAS_SHIFT);
+
+	// set device.control's enable field to GO
+	device[MYDEVICE_OFFSET32_CONTROL] =
+	  (device[MYDEVICE_OFFSET32_CONTROL] & ~MYDEVICE_CONTROL_ENABLE_MASK) |
+	  (MYDEVICE_CONTROL_ENABLE_V_GO << MYDEVICE_CONTROL_ENABLE_SHIFT);
+
+	// wait for device.control's active field to be RUNNING
+	while ((device[MYDEVICE_OFFSET32_CONTROL] & MYDEVICE_CONTROL_ACTIVE_MASK) !=
+	       (MYDEVICE_CONTROL_ACTIVE_V_RUNNING << MYDEVICE_CONTROL_ACTIVE_SHIFT))
+	{
+		yield();
+	}
+
+	return device[MYDEVICE_OFFSET32_DATA];
+}
+```
+
+## How About a `struct` of `uint32_t`-s?
+
+We can use C++ aggregates to at least make the "outer" layer of the MMIO structure,
+the layout and naming of the registers (but not their fields).
+Keeping the per-field parts of the above definition,
+but replacing the register layout information with slightly more idiomatic C++
+makes our example look something like this:
+
+```c++
+struct RawDevice
+{
+	uint32_t control;
+
+	uint32_t data;
+};
+
+// MYDEVICE_CONTROL_... as above
+
+uint32_t test(volatile RawDevice &device)
+{
+	// set device.control's enable field to NOGO
+	device.control =
+	  (device.control & ~MYDEVICE_CONTROL_ENABLE_MASK) |
+	  (MYDEVICE_CONTROL_ENABLE_V_NOGO << MYDEVICE_CONTROL_ENABLE_SHIFT);
+
+	/*
+	 * Set device.control's enable field to GO at the same time set the
+	 * reference field to EXTERNAL_A value.
+	 */
+	device.control = (device.control & ~(MYDEVICE_CONTROL_REFERENCE_MASK |
+	                                     MYDEVICE_CONTROL_BIAS_MASK)) |
+	                 (MYDEVICE_CONTROL_REFERENCE_V_EXTERNAL_A
+	                  << MYDEVICE_CONTROL_REFERENCE_SHIFT) |
+	                 (0x7f << MYDEVICE_CONTROL_BIAS_SHIFT);
+
+	// set device.control's enable field to GO
+	device.control =
+	  (device.control & ~MYDEVICE_CONTROL_ENABLE_MASK) |
+	  (MYDEVICE_CONTROL_ENABLE_V_GO << MYDEVICE_CONTROL_ENABLE_SHIFT);
+
+	// wait for device.control's active field to be RUNNING
+	while ((device.control & MYDEVICE_CONTROL_ACTIVE_MASK) !=
+	       (MYDEVICE_CONTROL_ACTIVE_V_RUNNING << MYDEVICE_CONTROL_ACTIVE_SHIFT))
+	{
+		yield();
+	}
+
+	return device.data;
+}
+```
+This compiles to the same code as the `test(volatile uint32_t *)` implementation above.
+
+## C++ Bitfields?
+
+We can try to write our example with C++ bitfields, despite their implementation-defined nature
+(perhaps we believe that there is and will only ever be exactly one C++ compiler for our machine).
+That would make the MMIO region definition look something like this:
+
+```c++
+struct BFDevice
+{
+	struct Control
+	{
+		bool enabled : 1;
+
+		bool active : 1;
+
+		uint32_t : 6; // padding
+
+		uint8_t reference : 2;
+
+		uint32_t : 6; // padding
+
+		uint32_t bias : 8;
+
+		uint32_t : 8; // padding
+	} control;
+
+	uint32_t data;
+};
+
+static_assert(sizeof(BFDevice::Control) == 4);
+```
+
+And in use, we'd run into the fact that C++ does not implicitly define copy operators
+suitable for use with `volatile` bitfield aggregates,
+so we'd resort to doing more writes than the above examples, with
+
+```c++
+uint32_t test(volatile BFDevice &device)
+{
+	device.control.enabled = false;
+
+	// challenging to make these into one MMIO write, like we could above
+	device.control.reference = MYDEVICE_CONTROL_REFERENCE_V_EXTERNAL_A;
+	device.control.bias      = 0x7f;
+
+	device.control.enabled = true;
+
+	while (!device.control.active)
+	{
+		yield();
+	}
+
+	return device.data;
+}
+```
+
+All the challenges aside, that sure looks like nicer code!
+So, how do bitpacks help?
+
+# Introducing Bitpacks
+
+Bitpacks offer a way to define, view, and manipulate typed fields within a numeric word.
+Internally, fields are simply contiguous spans of bits within that word,
+and operations are phrased in terms of bitwise operations (shift, complement, AND, OR).
+Fields are accessed through "proxies",
+each of which can be thought of as a reference to a field within a particular word.
+
+One defines a bitpack by defining a `class` (or `struct`) that inherits
+from the `Bitpack<typename Storage>` class template.
+The `Storage` template parameter defines the size (and type) of the underlying numeric word.
+
+Defining a field -- specifying its position within the word -- amounts to filling out a `FieldInfo` structure:
+
+```c++
+struct FieldInfo
+{
+	/// Minimum 0-indexed bit position occupied by this field
+	size_t minIndex;
+
+	/// Maximum 0-indexed bit position occupied by this field
+	size_t maxIndex;
+
+	/// Should proxies of this field not provide affordances for mutation?
+	bool isConst = false;
+};
+```
+
+A `FieldInfo {3, 7}`, for example, specifies a field spanning bits 3 through 7 of a word.
+From this, bitpacks can, internally, compute things like the `_SHIFT` and `_MASK` values used above.
+We will almost never encounter `FieldInfo`-s by name, but we will specify initializers for them when defining fields.
+
+The simplest way to build a proxy of a field, so that we can access it,
+is to define a method within our bitpack that invokes
+the `protected` `Bitpack::member<FieldType, FieldInfo>` method with appropriate arguments.
+This is called a "named member" and the C++ syntax involved
+is encapsulated within the `BITPACK_MEMBER_ADD` macro,
+to which we now direct our attention.
+
+## Named Members
+
+We can define a bitpack for our device's control register,
+and specify a named member for each field within, thus:
+
+```c++
+struct NuDevice
+{
+	struct Control : Bitpack<uint32_t>
+	{
+		BITPACK_USUAL_PREFIX;
+
+		BITPACK_MEMBER_ADD(enable, bool, 0, 0); // NoGo is false / Go is true
+
+		BITPACK_MEMBER_ADD(active, bool, 1, 1, true); // Off / Running
+
+		BITPACK_MEMBER_ADD(reference,
+		                   uint8_t,
+		                   8,
+		                   9); // values from MYDEVICE_CONTROL_REFERENCE_V_...
+
+		BITPACK_MEMBER_ADD(bias, uint8_t, 16, 23);
+	} control;
+
+	uint32_t data;
+};
+```
+
+As discussed, `struct Control` now inherits from `Bitpack<uint32_t>`.
+The `BITPACK_USUAL_PREFIX` macro hides some syntactic chatter that's often useful
+(including, notably, constructors and assignment operators).
+
+Our fields are now specified by invocations of the `BITPACK_MEMBER_ADD(n, T, ...)` macro.
+These invocations define methods named by `n`,
+each returning a `T`-based field proxy for the field whose `FieldInfo` follows.
+
+Field proxies offer a number of methods on the field they reference:
+
+* Getting the current value of the field.
+  Proxies implicitly convert to their field's type, so this is often syntactically "free",
+  but it is also explicitly available as the proxy's `.raw()` method.
+  In implementation, this is the expected shift and a mask to extract the field's value.
+
+* Setting the field value.
+  Proxies overload the assignment operator (`=`) to update the field's bits appropriately.
+  All other bits in the underlying word are not altered.
+  In implementation, this is the expected sequence of shift, complement, AND, and OR operations (as we've seen above).
+  This is not provided by proxies of fields whose `FieldInfo::isConst` flag is `true`.
+
+* Read-modify-write functionality.
+  Proxies provide a `.alter(f)` method which invokes the callback `f` with the field's current value
+  and updates the field's value with the callback's return value.
+
+* Cloning with override.
+  Proxies provide a `.with()` method that behaves much like `.alter()`
+  except that it returns a modified _copy_ of the word.
+  `.with()` can also be given a new value directly, rather than a callback.
+
+* Comparison.
+  Proxies overload the `<=>` operator,
+  and can be compared to other proxies (of compatible types) or values of the field's type.
+
+Continuing our example, the code that uses this bitpack-flavored definition looks like...
+
+```c++
+uint32_t test(volatile NuDevice &device)
+{
+	device.control.enable() = false;
+
+	device.control.alter([](auto c) {
+		c.reference() = MYDEVICE_CONTROL_REFERENCE_V_EXTERNAL_A;
+		c.bias()      = 0x7f;
+		return c;
+	});
+
+	device.control.enable() = true;
+
+	while (!device.control.read().active())
+	{
+		yield();
+	}
+
+	return device.data;
+}
+```
+This compiles to the same code as the `test(volatile RawDevice &)` implementation above.
+
+Proxy assignments and `.alter()` methods are defined for `volatile` bitpack references
+(such as `device.control` in this example, because the containing `NuDevice` is `volatile`),
+and each such performs a read-modify-write operation on the underlying word.
+Proxy are more picky about field _getter_ operations,
+and will refuse to operate on `volatile` bitpack references;
+the bitpack itself offers a `.read()` method
+that returns a non-`volatile` _snapshot_ of the (`volatile`) bitpack.
+This serves to keep accesses explicit in the source
+and allows for clearly differentiating multiple tests of a single read snapshot
+from many tests each performing its own read of field value(s).
+
+## Named Members with Custom Global Types
+
+Much of the bitpack machinery is an attempt to encourage the use of fields with _custom types_.
+For example, we might give a name to the "reference" enumeration for our device, thus:
+
+```c++
+enum class MyDeviceControlReference : uint8_t
+{
+	Internal  = 0,
+	ExternalA = 1,
+	ExternalB = 3,
+};
+```
+
+We can take advantage of this type by changing the `reference` member in our bitpack:
+```c++
+struct NeDevice
+{
+	struct Control : Bitpack<uint32_t>
+	{
+		BITPACK_USUAL_PREFIX;
+
+		BITPACK_MEMBER_ADD(enable, bool, 0, 0); // NoGo is false / Go is true
+
+		BITPACK_MEMBER_ADD(active, bool, 1, 1, true); // Off / Running
+
+		BITPACK_MEMBER_ADD(reference, MyDeviceControlReference, 8, 9);
+
+		BITPACK_MEMBER_ADD(bias, uint8_t, 16, 23);
+	} control;
+
+	uint32_t data;
+};
+```
+
+The corresponding use code changes very little,
+but introduces our first _use-side_ bitpack macro, `BITPACK_OPERATE_QUALIFY`:
+```c++
+uint32_t test(volatile NeDevice &device)
+{
+	device.control.enable() = false;
+
+	device.control.alter([](auto c) {
+		BITPACK_OPERATE_QUALIFY(c.reference(), =, ExternalA);
+		c.bias() = 0x7f;
+		return c;
+	});
+
+	device.control.enable() = true;
+
+	// .read() makes read of volatile word clear in source
+	while (!device.control.read().active())
+	{
+		yield();
+	}
+
+	return device.data;
+}
+```
+Again, this compiles to the same code as the `test(volatile NuDevice &)` implementation above.
+
+That `BITPACK_OPERATE_QUALIFY` macro invocation lets us avoid the need to manually qualify the `ExternalA` name;
+C++ name resolution rules would require that we write
+```c++
+c.reference() = MyDeviceControlReference::ExternalA;
+```
+The macro invocation takes advantage of the ability to look at the field's type at compile time.
+It expands, essentially, to
+```c++
+c.reference() = (decltype(c.reference())::Field::Type)::ExternalA;
+```
+which is to say
+```c++
+c.reference() = MyDeviceControlReference::ExternalA;
+```
+
+## Named Members with Custom Local Types
+
+The same `test` code (other than the type of the parameter) also works
+(and compiles to the same code)
+when we move the reference field's enumeration type into the `Control` structure itself:
+
+```c++
+struct NaDevice
+{
+	struct Control : Bitpack<uint32_t>
+	{
+		BITPACK_USUAL_PREFIX;
+
+		BITPACK_MEMBER_ADD(enable, bool, 0, 0); // NoGo is false / Go is true
+
+		BITPACK_MEMBER_ADD(active, bool, 1, 1, true); // Off / Running
+
+		enum class Reference : uint8_t
+		{
+			Internal  = 0,
+			ExternalA = 1,
+			ExternalB = 3,
+		};
+		BITPACK_MEMBER_ADD(reference, Reference, 8, 9);
+
+		BITPACK_MEMBER_ADD(bias, uint8_t, 16, 23);
+	} control;
+
+	uint32_t data;
+};
+```
+
+With that definition, the `BITPACK_OPERATE_QUALIFY(c.reference(), =, ExternalA)` macro invocation
+in our `test` method still expands to
+```c++
+c.reference() = (decltype(c.reference())::Field::Type)::ExternalA;
+```
+but that now means
+```c++
+c.reference() = MyDevice::Control::Reference::ExternalA;
+```
+
+We strongly encourage the use of such local types,
+as it uses the device and register structures as namespaces,
+minimizing the amount of stuff at global scope and making the purpose of a type clearer.
+
+## Local Types as Member Names
+
+In fact, fields can often be thought of as being _named by their type_:
+_this device's_ enable flag is of a different type from _that device's_,
+even though they're both active-high single-bit fields,
+and similarly for the other fields.
+It would be strange, after all, to read configuration values from one device and write them directly to another;
+we can ask the C++ type system to help ensure that we don't accidentally do so.
+
+Towards this end, bitpacks include a fair bit of machinery for introducing a custom type for a particular field
+and then using that type _as the name_ of that field.
+To make use of this machinery, we first replace (or augment) the `BITPACK_MEMBER_ADD` macros above
+with `BITPACK_MEMBER_ADD_*` macros,
+which simultaneously introduce a new type and associate field information with it.
+
+```c++
+struct TyDevice
+{
+	struct Control : Bitpack<uint32_t>
+	{
+		BITPACK_USUAL_PREFIX;
+
+		BITPACK_MEMBER_ADD_ENUM_BOOL(Enable, NoGo, Go, 0);
+
+		BITPACK_MEMBER_ADD_ENUM_BOOL(Active, Off, Running, 1, true);
+
+		BITPACK_MEMBER_ADD_ENUM(Reference, uint8_t, 8, 9) {
+			Internal  = 0,
+			ExternalA = 1,
+			ExternalB = 3,
+		};
+
+		BITPACK_MEMBER_ADD_NUMERIC(Bias, uint8_t, 16, 23);
+	} control;
+
+	uint32_t data;
+};
+```
+
+`BITPACK_MEMBER_ADD_ENUM(T, B, ...)` defines an `enum class T` with base type `B`;
+the definition of the enumeration follows the macro.
+`BITPACK_MEMBER_ADD_ENUM_BOOL(T, VF, VT, bit, ...)` is a wrapper thereof,
+defining an `enum class T : bool` with the enumerator `VF` having value `false` and `VT` `true`;
+because booleans occupy exactly one bit,
+it is not necessary to specify both the minimum and maximum bit positions.
+`BITPACK_MEMBER_ADD_NUMERIC(T, B, ...)` defines a class `T` which inherits from a `Numeric<B>` base,
+an internal helper class that provides, for example, implicit conversions to and from `B`.
+
+Rather than having named methods for each field of our bitpack,
+we now make use of a singular method template, `.member<T>()`,
+which returns a proxy of _the_ field whose type is `T`.
+Because the types are defined within a bitpack type itself,
+they often need qualification:
+
+* The `BITPACK_MEMBER_DECLTYPE(b, T)` macro gets the proxy of the field whose type is
+  `T` qualified by the type of the bitpack value `b`.
+  (That is, it expands to `(b).template member<decltype(b)::T>()`.)
+
+* If the type of the bitpack value `b` is "dependent" (in the C++ sense),
+  use the `BITPACK_MEMBER_DEPENDENT(b, T)` macro,
+  which differs only in that it calls for dependent resolution of the type named `T`.
+  (That is, it expands to `(b).template member<typename decltype(b)::T>()`.)
+
+We can make use of macros that combine these and the `OPERATE_QUALIFY` form we've seen above
+when writing code that uses these type-centric bitpack definitions:
+
+```c++
+uint32_t test(volatile TyDevice &device)
+{
+	BITPACK_OPERATE_QUALIFY_DECLTYPE(device.control, Enable, =, NoGo);
+
+	device.control.alter([](auto c) {
+		BITPACK_OPERATE_QUALIFY_DEPENDENT(c, Reference, =, ExternalA);
+		BITPACK_MEMBER_DEPENDENT(c, Bias) = 0x7f;
+		return c;
+	});
+
+	BITPACK_OPERATE_QUALIFY_DECLTYPE(device.control, Enable, =, Go);
+
+	while (BITPACK_OPERATE_QUALIFY_DECLTYPE(
+	  device.control.read(), Active, !=, Running))
+	{
+		yield();
+	}
+
+	return device.data;
+}
+```
+This too compiles to the same code as the `test(volatile NuDevice &)` implementation above.
+
+`BITPACK_OPERATE_QUALIFY_DECLTYPE(b, T, op, v)` is just
+`BITPACK_OPERATE_QUALIFY(BITPACK_MEMBER_DECLTYPE(b, T), op, v)`.
+Here, rather than using a method like `.reference()` to obtain a field proxy by name
+we use `BITPACK_MEMBER_DECLTYPE` to use the field's _type_ as its name and construct the appropriate proxy.
+`BITPACK_OPERATE_QUALIFY_DEPENDENT`, analogously, uses `BITPACK_MEMBER_DEPENDENT` internally.
+In much more detail, `BITPACK_OPERATE_QUALIFY_DECLTYPE(c, Reference, =, ExternalA)`
+can be thought of as expanding to
+```c++
+BITPACK_OPERATE_DECLTYPE(c.template member<TyDevice::Reference>(), =, ExternalA)
+```
+which then expands to
+```c++
+c.template member<TyDevice::Reference>() =
+  decltype(c.template member<TyDevice::Reference>)::Field::Type::ExternalA
+```
+which is to say
+```c++
+c.template member<TyDevice::Reference>() = TyDevice::Reference::ExternalA
+```
+(Internally, the difference between explicitly named members and type-named members
+amounts to the former invoking `.member<FieldType, FieldInfo>()` while the latter invokes `.member<FieldType>()`.
+This second form uses some type-level computation machinery
+buried inside the `BITPACK_USUAL_PREFIX` and `BITPACK_MEMBER_ADD_*` macros
+to map from a `FieldType` to its `FieldInfo`.)
+
+We could also have written, instead of `BITPACK_MEMBER_DEPENDENT(c, Bias) = 0x7f`,
+`BITPACK_OPERATE_WRAP_DEPENDENT(c, Bias, =, 0x7f)`.
+The former makes use of `Numeric<T>`'s implicit conversion from `T`, while the latter is more general.
+The `BITPACK_OPERATE_WRAP_...` macros are similar to the `BITPACK_OPERATE_QUALIFY_...`
+except that they expand to invoke the indicated type's constructor, rather than simply qualify the value.
+That is, `BITPACK_OPERATE_WRAP(proxy, op, value)` expands to `(proxy) op (F{value})`,
+invoking the `F` constructor,
+where `F` is the type of the field being proxied by `proxy` (specifically, `decltype(proxy)::Field::Type`).
+
+# Conclusion
+
+This has been a whirlwind tour of the "bitpack" machinery available in the CHERIoT-RTOS programming environment.
+Bitpacks are meant to increase legibility, portability, and type-safety of low-level code that manipulates sub-fields of numeric words.
+We hope that you find they have achieved their purpose!
