@@ -22,6 +22,15 @@ Articles
 {{ articles }}
 {% endif %}
 
+{% capture dissertations %}{% bibliography --query @mastersthesis, @phdthesis %}{% endcapture %}
+
+{% if dissertations.size != 30 %}
+Dissertations
+-------------
+
+{{ dissertations }}
+{% endif %}
+
 {% capture books %}{% bibliography --query @book %}{% endcapture %}
 
 {% if books.size != 30 %}
