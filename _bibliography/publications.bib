@@ -1,3 +1,21 @@
+@article{10.1145/3831361,
+	author = {Chisnall, David},
+	title = {How CHERIoT Provides Strong and Usable Isolation Without an MMU},
+	year = {2026},
+	issue_date = {July/August 2026},
+	publisher = {Association for Computing Machinery},
+	address = {New York, NY, USA},
+	volume = {24},
+	number = {4},
+	issn = {1542-7730},
+	url = {https://doi.org/10.1145/3831361},
+	doi = {10.1145/3831361},
+	abstract = {Co-design of hardware and software offers stronger security and ease of useThe CHERIoT platform is a RISC-V-based ISA, an RTOS, and a programmer model that were co-designed for security. The ISA provides hardware mechanisms for enforcing spatial and (heap) temporal memory safety, type safety for opaque types, and lightweight call gates, building on top of CHERI research. The privilege-separated RTOS provides services on top of this exposed as compartments that expose function calls as interfaces and share objects by simply passing pointers to them.The same programmer model is exposed to other users for creating least-privilege architectures where you can reason about the security by reading the (C, C++, or Rust) source code or using auditing tools to get a coarse-grained worst-case approximation. CHERIoT is optimized for small devices but showcases what is possible at any scale if you start by assuming CHERI.},
+	journal = {Queue},
+	month = sep,
+	numpages = {22}
+}
+
 @mastersthesis{titarosemeyer2025,
 	author = {Tita Rosemeyer},
 	title = {Formal Verification of Capability-Safety in the CHERIoT-Ibex Processor},
