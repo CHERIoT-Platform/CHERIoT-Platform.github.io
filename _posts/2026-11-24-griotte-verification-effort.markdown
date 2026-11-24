@@ -106,7 +106,7 @@ in a technical sense.
 We then define a universal contract, stating that if an adversary has only access to
 *safe to share* capabilities, it can then execute safely and only produce other *safe to share* capabilities.
 
-[^contract]: In the sense of Huyghebaert et al. {% cite huyghebaert2023 %}
+[^contract]: In the sense of Huyghebaert et al. {% cite huyghebaert2023 --file griotte-blogpost.bib %}
 
 Verification in the presence of compartments and a trusted switcher
 -------------------------------------------------------------------
@@ -282,17 +282,17 @@ Other formal verification work you might be interested in
 The focus of Cerise and Griotte has been _advanced_ properties of capability machines,
 in particular involving non-monotonic domain transitions.
 As such, it is complementary to other formal verification work:
-- Nienhuis et al. {% cite nienhuis2020 %} and
-Bauereiß et al. {% cite bauereiss2022 %}
+- Nienhuis et al. {% cite nienhuis2020 --file griotte-blogpost.bib %} and
+Bauereiß et al. {% cite bauereiss2022 --file griotte-blogpost.bib %}
 prove capability monotonicity of real ISAs for CHERI-MIPS and Morello, respectively;
-and Hammond et al. {% cite hammond2025 %} builds on top of those proofs and Cerise
+and Hammond et al. {% cite hammond2025 --file griotte-blogpost.bib %} builds on top of those proofs and Cerise
 to recover some non-monotonic domain transitions
-- Ploix et al. {% cite ploix2025 %} proves that the CHERIoT-Ibex implements the CHERIoT-Sail model
-- Duque Antón et al. {% cite vericheri2024 %} and
-Rosemeyer {% cite titarosemeyer2025 %} prove security properties at the level of the RTL
+- Ploix et al. {% cite ploix2025 --file griotte-blogpost.bib %} proves that the CHERIoT-Ibex implements the CHERIoT-Sail model
+- Duque Antón et al. {% cite vericheri2024 --file griotte-blogpost.bib %} and
+Rosemeyer {% cite titarosemeyer2025 --file griotte-blogpost.bib %} prove security properties at the level of the RTL
 - Work on an [abstract specification](https://github.com/OpenSeCura/cheriot-abstract-spec) of the CHERIoT ISA and switcher at Google.
 
 References
 ----------
 
-{% bibliography --cited %}
+{% bibliography --cited_in_order --file griotte-blogpost.bib %}
