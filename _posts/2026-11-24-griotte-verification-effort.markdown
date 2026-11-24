@@ -86,7 +86,7 @@ and on the code of specific compartments of interest, for example a key-value st
 We designed this separation logic so it is reusable,
 and we expect that other such compartments of interest could be verified with it.
 
-[^kvs]: Based on [that](https://cheriot.org/development/rtos/2024/07/03/simplifying-services.html) of Murali Vijayaraghavan
+[^kvs]: Based on [the key-value store design](https://cheriot.org/development/rtos/2024/07/03/simplifying-services.html) of Murali Vijayaraghavan.
 
 Second, we defined a logical relation in separation logic,
 which is effectively an over-approximation of the effect of unknown code
