@@ -227,7 +227,7 @@ and what is the authority that an exited thread still holds.
 We first looked at the scheduler's code, in which exited threads are never meant to be scheduled anymore.
 Intuitively, we would think that an exited thread has no continuation.
 
-However, the scheduler is not trusted for integrity and confidentiality 
+However, the scheduler is not trusted for confidentiality or integrity 
 (which are the properties we are verifying!), which means that in our model,
 we consider the scheduler as any other adversary compartment
 (and therefore, from our perspective, it contains arbitrary code).
