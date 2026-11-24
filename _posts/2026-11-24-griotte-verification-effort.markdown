@@ -53,20 +53,20 @@ is that when trying to characterise what an unknown compartment can affect, we
 have to account not only for what it is passed directly (if an unknown
 compartment is physically passed a write capability to a region of memory, then
 it is behaviourally passed the ability to overwrite that region of memory), but
-also what it is passed indirectly --- and this involves not only recursive
+also what it is passed indirectly---and this involves not only recursive
 access (if an unknown compartment is physically passed a read capability to a
 region of memory, then it is behaviourally passed the ability to acquire
 whatever ability is given by the capabilities in that region of memory), but
 also access through non-monotonic domain transitions (if an unknown compartment
 is physically passed a sealed entry point capability to a "counter"
 compartment's `incr` function, then it is behaviourally passed the ability to
-affect the counter --- but only by incrementing it). A unique feature of 
+affect the counter---but only by incrementing it). A unique feature of 
 Cerise is the ability to reason also about the latter part of the challenge.
 
 What makes it difficult to design such a characterisation is that it should at
 the same time be precise enough, and simple enough to verify the programs that
 we care about. At a very high level, Griotte defines a language to succinctly
-describe what is affected - and to state that something is *not* affected. The
+describe what is affected---and to state that something is *not* affected. The
 kind of properties that we want to describe are not only memory safety
 properties (if I share a buffer to the caller, then I have the guarantee that it
 cannot access the global data that I never shared), but also no-capture
@@ -137,7 +137,7 @@ The cherry on top: Concurrency, exception handling and optimisations
 -------------------------------------------------
 
 Our initial model was a simplification of CHERIoT:
-it didn't support exceptions or concurrency / context switching,
+it didn't support exceptions or concurrency/context switching,
 and some optimisations of the switcher (such as the stack high watermark)
 were left out.
 
@@ -236,12 +236,9 @@ in which case the switcher re-instated that thread's last context (as stored in 
 independently from whether that thread had exited.
 Because the thread exit path of the switcher never cleared the save area,
 an exited thread's last context turned out to be whatever was left after the last preemption (or fault), 
-which means that it could contain local capabilities that should not have been captured
---- clearly violating no-capture.
+which means that it could contain local capabilities that should not have been captured---clearly violating no-capture.
 
-We caught this bug because our formal verification method 
---- focused on integrity and confidentiality ---
-captures the threat model of CHERIoT,
+We caught this bug because our formal verification method---focused on integrity and confidentiality---captures the threat model of CHERIoT,
 where the scheduler is no different from other adversaries with respect to those properties.
 The way the problem manifested in our proof is that we had to define what the authority of the continuation of an exited thread is,
 to account for what would happen if the thread were scheduled in a stale state.
@@ -251,7 +248,7 @@ There are two disjoint sub-problems:
 (1) having access to an old register file (potentially breaking no-capture guarantees),
 and (2) an exited thread being re-scheduled.
 Sub-problem (1) is dangerous for integrity and confidentiality.
-Sub-problem (2) is a design question - what should happen if the scheduler reschedules an exited thread.
+Sub-problem (2) is a design question---what should happen if the scheduler reschedules an exited thread.
 
 The fix (merged in [PR #769](https://github.com/CHERIoT-Platform/cheriot-rtos/pull/769))
 then fixed those problems:
