@@ -130,6 +130,10 @@ assume that the machine starts in a state that corresponds
 to the firmware image having been properly loaded.
 We have not verified the loader itself, and so it is part of our TCB.
 Technically, we consider executions only starting from a "loader-final" state.
+The loader is deterministic and so it is relatively easy to dump the contents of memory from a
+device (or simulator) after the loader has run and verify that a specific execution of the loader meets the
+properties required by our "loader-final" state.
+
 We expect that it should be possible to prove the loader correct,
 but this is future work for now.
 
@@ -216,6 +220,10 @@ ended up being pretty simple:
 by forbidding malicious callers from changing the base of the stack,
 it ensures that malicious callers cannot craft a stack object outside of the stack that would
 move the SHWM outside of the stack bounds.
+This does not prevent the caller from calling the callee with less than the maximum possible
+amount of stack space,
+but does require that the shared stack region is truncated in the same direction as normal stack allocation.
+
 We could validate the fix in our setup, by completing the proof, before the merge.
 
 ### "You're not really over yet": Concurrency with a malicious scheduler
@@ -254,6 +262,8 @@ The fix (merged in [PR #769](https://github.com/CHERIoT-Platform/cheriot-rtos/pu
 then fixed those problems:
 (1) the register file is cleared in the exit thread path (preventing an exited thread from using stale values)
 and (2) an exited thread becomes an idle thread looping in a `wfi` (wait-for-interrupt) loop.
+This fix was one of several possible fixes considered but was chosen because the scheduler always has the ability to run the idle thread (which loops in a `wfi` instruction).
+This meant that the ability to schedule an exited thread could be trivially shown to not increase the power of the scheduler.
 
 What now?
 ---------
@@ -266,12 +276,11 @@ the whole authoritative [cheriot-sail](https://github.com/CHERIoT-Platform/cheri
 using the `sail-to-rocq` extraction, and our proofs of that are now complete.
 It means that we are quite confident that 
 the [current upstream](https://github.com/CHERIoT-Platform/cheriot-rtos/blob/e2dad05078bd25ed6f1ab993e14f332aa8c20557/sdk/core/switcher/entry.S) 
-switcher is free of bugs.
+switcher, together with the hardware, implement thread and compartments isolation, as well as no-capture.
 
 In the future we would also like to verify the loader, and we also hope that our
 logical machinery can be used to verify correctness and security of applications
 running atop CHERIoT.
-
 
 Other formal verification work you might be interested in
 ---------------------------------------------------------
