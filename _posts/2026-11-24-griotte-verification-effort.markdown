@@ -180,7 +180,7 @@ to clear only the stack frame used during the call.
 Specifically, the SHWM tracks, in hardware, the highest address of the stack that has been written to,
 and the switcher only clears up to this address, instead of the whole shared stack region.
 The code of the switcher relied on an invariant for the SHWM:
-it should always be in between the bounds of the stack capability.
+it should always be in between the bounds of the stack capability at the point of a cross-compartment call.
 To that end, the switcher always re-sets it in the bounds of the stack capability at
 cross-compartment calls and returns.
 This invariant was very dynamic by nature,
