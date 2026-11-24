@@ -38,3 +38,12 @@ pre.bibtex, p.abstract {
 	margin-left: 0;
 	margin-right: 0;
 }
+
+// Make the title and authors in bibliographies display without a line break
+// between them:
+.csl-left-margin {
+  display: inline
+}
+.csl-right-inline {
+  display: inline
+}
