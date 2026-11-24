@@ -178,7 +178,7 @@ that even when the instruction can fault, all invariants of the system are maint
 On the other hand, the stack high watermark (SHWM) is an optimisation allowing the switcher
 to clear only the stack frame used during the call.
 Specifically, the SHWM tracks, in hardware, the highest address of the stack that has been written to,
-and the switcher only clears up to this address, instead of the whole stack frame.
+and the switcher only clears up to this address, instead of the whole shared stack region.
 The code of the switcher relied on an invariant for the SHWM:
 it should always be in between the bounds of the stack capability.
 To that end, the switcher always re-sets it in the bounds of the stack capability at
